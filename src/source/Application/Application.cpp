@@ -10,12 +10,12 @@ Application::Application() {
     Mesh::meshList.clear();
     Model::modelList.clear();
 
-    float windowWidth = (float)window.getBufferWidth();
-    float windowHeight = (float)window.getBufferHeight();
+    windowWidth = window.getBufferWidth();
+    windowHeight = window.getBufferHeight();
 
     viewportMatrix = glm::mat4{
-        glm::vec4(windowWidth / 2.f, 0.f, 0.f, windowWidth / 2.f),
-        glm::vec4(0.f, windowHeight / 2.f, 0.f, windowHeight / 2.f),
+        glm::vec4((float)windowWidth / 2.f, 0.f, 0.f, (float)windowWidth / 2.f),
+        glm::vec4(0.f, (float)windowHeight / 2.f, 0.f, (float)windowHeight / 2.f),
         glm::vec4(0.f, 0.f, 1.f, 0.f),
         glm::vec4(0.f, 0.f, 0.f, 1.f)
     };
@@ -214,25 +214,29 @@ void Application::start() {
     glm::vec3 fireParticlePosition{ 1125.f, 120.f, 400.f };
     ParticleSystem fireSystem(particleColor, 30.f, -30.f, 1.f, 30.f, fire);*/
 
-    hdrBuffer._initMSAA();
+    hdrBuffer._initMSAA(window.getBufferWidth(), window.getBufferHeight());
 
     setGlobalPBRUniforms(forwardShader);
     //setGlobalPBRUniforms(deferredShader);
 
-    glEnable(GL_CULL_FACE);
     glClearColor(0.f, 0.01f, 0.01f, 1.f);
 
     while (!glfwWindowShouldClose(window.getGlfwWindow())) {
         mainLoopForward(pSystem, modelMatrix, particlePosition, lightDirection);
     }
-
-    glDisable(GL_CULL_FACE);
 }
 
-void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition,
-    glm::vec3& lightDirection)
+void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
 {
     glfwPollEvents();
+
+    if (window.getBufferWidth() != windowWidth || window.getBufferHeight() != windowHeight) {
+        windowWidth = window.getBufferWidth();
+        windowHeight = window.getBufferHeight();
+
+        postProcess.resizeBuffers(windowWidth, windowHeight);
+        hdrBuffer.resizeMSAA(windowWidth, windowHeight);
+    }
 
     // Calculate delta time
     currTime = (float)glfwGetTime();
@@ -251,9 +255,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         currentFramebuffer = 0;
         elapsedTime = 0.f;
 
-        gui._newFrame();
-
-        currentFramebuffer = 0;
+        overlay.newFrame();
 
         skylight.updateLightLocation(lightDirection);
 
@@ -268,13 +270,13 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         if (drawSkybox)
             skybox.renderSkybox();
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         lightSources.renderLightSources(
             skylight, pointLights, spotLights, pointLightCount, spotLightCount
         );
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (enableShadows) {
             csm.calculateShadows(
@@ -283,11 +285,18 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
             );
         }
 
+        ssao.setRadius(ssaoRadius);
+        ssao.setBias(ssaoBias);
+        ssao.setOcclusionPower(ssaoOcclusionPower);
+        gbuffer.updateWireframeBool(drawWireframe);
+        gbuffer.updateBuffer(outlineShader, index, Mesh::meshList, Model::modelList, currentFramebuffer);
+        ssao.calcSSAO(gbuffer.positionBuffer(), gbuffer.normalBuffer(), currentFramebuffer);
+
         selection.pickingPhase(Mesh::meshList, currentFramebuffer);
 
         mouseClickCoords = window.getViewportCoord();
 
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !gui.isMouseOverWindow(ImGuiMouseButton_Left)) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !overlay.isMouseOverWindow(ImGuiMouseButton_Left)) {
             index = selection.mouseSelectionResult(
                 window.getBufferHeight(), (int)mouseClickCoords.x, (int)mouseClickCoords.y
             );
@@ -307,27 +316,27 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         }
 
         if (index < (int)Mesh::meshList.size() && index != -1) {
-            gui._updateTransformOperation(window);
-            gui.manipulate(window.getWindowWidth(), window.getWindowHeight(), camera, Mesh::meshList[index]);
+            overlay._updateTransformOperation(window);
+            overlay.manipulate(window.getWindowWidth(), window.getWindowHeight(), camera, Mesh::meshList[index]);
             Mesh::meshList[index]->renderMeshWithOutline(forwardShader, outlineShader);
         }
 
         for (size_t i = 0; i < Mesh::meshList.size(); i++) {
-            if ((int)i != index && Mesh::meshList[i]->getObjectID() != -1)
+            if ((int)i != index)
                 Mesh::meshList[i]->renderMesh(forwardShader);
         }
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (displayGrid)
             grid.renderGrid();
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (displayCoordinateSystem)
             coordSystem.drawCoordinateSystem(window.getBufferWidth(), window.getBufferHeight(), camera);
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         particlePosition = camera.getCameraPosition() + camera.getFrontVector() * 200.f;
         //fireSystem.generateParticles(fireParticlePosition, 0.f);
@@ -339,38 +348,52 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         pSystem.renderParticles(&window, camera, modelMatrix);
         //fireSystem.renderParticles(&this->window, this->camera, modelMatrix);
 
-        if (enableHDR && enableBloom) {
-            bloom.setKnee(bloomThreshold);
-            bloom.renderBloomTextureMSAA(filterRadius, currentFramebuffer);
-        }
-
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (enableHDR) {
-            //hdrBuffer.renderToDefaultBuffer(exposure, bloom.bloomTexture(), enableBloom);
-            hdrBuffer.renderToDefaultBufferMSAA(exposure, bloom.bloomTexture(), enableBloom);
+            postProcess.postProcessingPassMSAA(hdrBuffer.getFramebufferID(), enableBloom, bloomThreshold, filterRadius, exposure);
+            postProcess.blitToDefaultFramebuffer();
         }
 
-        if (index != -1)
-            gui.render(exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
+        if (index != -1) {
+            overlay.CreateSceneViewport(ssao.occlusionBuffer(), camera, Mesh::meshList[index]);
+
+            overlay.render(
+                window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
                 ssaoBias, ssaoOcclusionPower, drawSkybox, displayGrid, displayCoordinateSystem,
-                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection, Mesh::meshList[index]);
-        else
-            gui.render(exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
+                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection, Mesh::meshList[index]
+            );
+        }
+        else {
+            overlay.CreateSceneViewport(ssao.occlusionBuffer(), camera);
+
+            overlay.render(
+                window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
                 ssaoBias, ssaoOcclusionPower, drawSkybox, displayGrid, displayCoordinateSystem,
-                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection);
+                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection
+            );
+        }
 
         glfwSwapBuffers(window.getMainWindow());
     }
 }
 
-void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection) {
-    currTime = (GLfloat)glfwGetTime();
+void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
+{
+    glfwPollEvents();
+
+    /*if (window.getBufferWidth() != windowWidth || window.getBufferHeight() != windowHeight) {
+        windowWidth = window.getBufferWidth();
+        windowHeight = window.getBufferHeight();
+
+        postProcess.resizeBuffers(windowWidth, windowHeight);
+        hdrBuffer.resize(windowWidth, windowHeight);
+    }*/
+
+    currTime = (float)glfwGetTime();
     deltaTime = currTime - lastTime;
     elapsedTime += deltaTime;
     lastTime = currTime;
-
-    glfwPollEvents();
 
     camera.keyFunctionality(window.getCurrWindow(), deltaTime);
     camera.mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
@@ -383,9 +406,7 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
         currentFramebuffer = 0;
         elapsedTime = 0.f;
 
-        gui._newFrame();
-
-        currentFramebuffer = 0;
+        overlay.newFrame();
 
         skylight.updateLightLocation(lightDirection);
 
@@ -408,7 +429,7 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 
         mouseClickCoords = window.getViewportCoord();
 
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !gui.isMouseOverWindow(ImGuiMouseButton_Left)) {
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !overlay.isMouseOverWindow(ImGuiMouseButton_Left)) {
             index = selection.mouseSelectionResult(
                 window.getWindowHeight(), (int)mouseClickCoords.x, (int)mouseClickCoords.y
             );
@@ -445,34 +466,34 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
         glBindTexture(GL_TEXTURE_2D, ssao.occlusionBuffer());
 
         if (index < (int)Mesh::meshList.size() && index != -1) {
-            gui._updateTransformOperation(window);
-            gui.manipulate(window.getWindowWidth(), window.getWindowHeight(), camera, Mesh::meshList[index]);
+            overlay._updateTransformOperation(window);
+            overlay.manipulate(window.getWindowWidth(), window.getWindowHeight(), camera, Mesh::meshList[index]);
         }
 
         quad.renderQuad();
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (drawSkybox)
             skybox.renderSkybox();
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         lightSources.renderLightSources(
             skylight, pointLights, spotLights, pointLightCount, spotLightCount
         );
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (displayGrid)
             grid.renderGrid();
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (displayCoordinateSystem)
             coordSystem.drawCoordinateSystem(window.getBufferWidth(), window.getBufferHeight(), camera);
 
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         particlePosition = camera.getCameraPosition() + camera.getFrontVector() * 200.f;
         //fireSystem.generateParticles(fireParticlePosition, 0.f);
@@ -484,26 +505,25 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
         pSystem.renderParticles(&window, camera, modelMatrix);
         //fireSystem.renderParticles(&window, camera, modelMatrix);
 
-        if (enableHDR && enableBloom) {
-            bloom.setKnee(bloomThreshold);
-            bloom.renderBloomTextureMSAA(filterRadius, currentFramebuffer);
-        }
-
-        // ----------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------------
 
         if (enableHDR) {
-            //hdrBuffer.renderToDefaultBuffer(exposure, bloom.bloomTexture(), enableBloom);
-            hdrBuffer.renderToDefaultBufferMSAA(exposure, bloom.bloomTexture(), enableBloom);
+            postProcess.postProcessingPass(hdrBuffer.getColorbufferID(), enableBloom, bloomThreshold, filterRadius, exposure);
+            postProcess.blitToDefaultFramebuffer();
         }
 
         if (index != -1)
-            gui.render(exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
-                ssaoBias, ssaoOcclusionPower, drawSkybox, displayGrid, displayCoordinateSystem,
-                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection, Mesh::meshList[index]);
+            overlay.render(
+                window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius, ssaoBias, ssaoOcclusionPower,
+                drawSkybox, displayGrid, displayCoordinateSystem,
+                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection, Mesh::meshList[index]
+            );
         else
-            gui.render(exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
-                ssaoBias, ssaoOcclusionPower, drawSkybox, displayGrid, displayCoordinateSystem,
-                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection);
+            overlay.render(
+                window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius, ssaoBias, ssaoOcclusionPower,
+                drawSkybox, displayGrid, displayCoordinateSystem,
+                enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection
+            );
 
         glfwSwapBuffers(window.getMainWindow());
     }

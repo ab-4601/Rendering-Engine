@@ -1,7 +1,7 @@
 #include "../../headers/Engine Core/MouseSelector.h"
 
-MouseSelector::MouseSelector(unsigned int windowWidth, unsigned int windowHeight) {
-	this->pixelInfo.init(windowWidth, windowHeight);
+MouseSelector::MouseSelector(int windowWidth, int windowHeight) {
+	pixelInfo.init(windowWidth, windowHeight);
 }
 
 void MouseSelector::pickingPhase(const std::vector<Mesh*>& meshes, uint32_t framebuffer)
@@ -19,9 +19,9 @@ void MouseSelector::pickingPhase(const std::vector<Mesh*>& meshes, uint32_t fram
 		meshes[i]->drawMesh(GL_TRIANGLES);
 	}
 
-	pixelInfo.disableWriting(framebuffer);
-
 	shader.endShader();
+
+	pixelInfo.disableWriting(framebuffer);
 }
 
 int MouseSelector::mouseSelectionResult(int windowHeight, int x, int y) {

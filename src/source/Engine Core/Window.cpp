@@ -1,6 +1,6 @@
 #include "../../headers/Engine Core/Window.h"
 
-Window::Window(uint32_t windowWidth, uint32_t windowHeight)
+Window::Window(int windowWidth, int windowHeight)
     : window{ nullptr }, windowWidth{ windowWidth }, windowHeight{ windowHeight }, bufferWidth{ 0 }, bufferHeight{ 0 },
     lastX{ 0.f }, lastY{ 0.f }, XChange{ 0.f }, YChange{ 0.f }, mouseFirstMoved{ true }, scrollChange{ 0.f },
     LMBPressed{ false }, RMBPressed{ false }, viewportX{ 0 }, viewportY{ 0 } {
@@ -79,6 +79,21 @@ void Window::getMouseButton(GLFWwindow* window, int button, int action, int mods
         currWindow->setRMBPressed(false);
 }
 
+void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    glfwGetFramebufferSize(currWindow->window, &currWindow->bufferWidth, &currWindow->bufferHeight);
+    glfwGetWindowSize(currWindow->window, &currWindow->windowWidth, &currWindow->windowHeight);
+
+    glViewport(0, 0, width, height);
+}
+
+void Window::windowFocusCallback(GLFWwindow* window, int focused) {
+    Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    currWindow->isWindowFocused = (bool)focused;
+}
+
 void Window::setupWindow() {
     if (!glfwInit()) {
         std::cerr << "Unable to initialize glfw" << std::endl;
@@ -103,6 +118,8 @@ void Window::setupWindow() {
         glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 
         windowWidth = mode->width;
         windowHeight = mode->height;
@@ -147,6 +164,7 @@ void Window::setupWindow() {
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_CULL_FACE);
 
     // Create viewport
     glViewport(0, 0, bufferWidth, bufferHeight);

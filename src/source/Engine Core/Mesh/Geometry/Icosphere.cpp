@@ -13,12 +13,12 @@ void Icosphere::_generateIcosahedron() {
     const float N = 0.f;
 
     vertices = {
-        Vertex({-X,N,Z}, {0.f, 0.f}, {-X,N,Z}), Vertex({X,N,Z}, {0.f, 0.f}, {X,N,Z}),
-        Vertex({-X,N,-Z}, {0.f, 0.f}, {-X,N,-Z}),  Vertex({X,N,-Z}, {0.f, 0.f}, {X,N,-Z}),
-        Vertex({N,Z,X}, {0.f, 0.f}, {N,Z,X}),  Vertex({N,Z,-X}, {0.f, 0.f}, {N,Z,-X}),
-        Vertex({N,-Z,X}, {0.f, 0.f}, {N,-Z,X}),  Vertex({N,-Z,-X}, {0.f, 0.f}, {N,-Z,-X}),
-        Vertex({Z,X,N}, {0.f, 0.f}, {Z,X,N}), Vertex({-Z,X,N}, {0.f, 0.f}, {-Z,X,N}),
-        Vertex({Z,-X,N}, {0.f, 0.f}, {Z,-X,N}), Vertex({-Z,-X,N}, {0.f, 0.f}, {-Z,-X,N})
+        Vertex({-X, N, Z}, {0.f, 0.f}, {-X, N, Z}), Vertex({ X, N, Z}, {0.f, 0.f}, { X, N, Z}),
+        Vertex({-X, N,-Z}, {0.f, 0.f}, {-X, N,-Z}), Vertex({ X, N,-Z}, {0.f, 0.f}, { X, N,-Z}),
+        Vertex({ N, Z, X}, {0.f, 0.f}, { N, Z, X}), Vertex({ N, Z,-X}, {0.f, 0.f}, { N, Z,-X}),
+        Vertex({ N,-Z, X}, {0.f, 0.f}, { N,-Z, X}), Vertex({ N,-Z,-X}, {0.f, 0.f}, { N,-Z,-X}),
+        Vertex({ Z, X, N}, {0.f, 0.f}, { Z, X, N}), Vertex({-Z, X, N}, {0.f, 0.f}, {-Z, X, N}),
+        Vertex({ Z,-X, N}, {0.f, 0.f}, { Z,-X, N}), Vertex({-Z,-X, N}, {0.f, 0.f}, {-Z,-X, N})
     };
 
     indices = {
@@ -56,15 +56,15 @@ void Icosphere::_subdivide(glm::vec3 a, glm::vec3 b, glm::vec3 c, uint32_t index
     mid3 = glm::normalize(mid3);
 
     glm::vec3 position{ mid1.x, mid1.y, mid1.z };
-    addVertex(position, glm::vec2(0.f), position);
+    vertices.push_back(Vertex(position, glm::vec2(0.f), position));
     uint32_t newIndex1 = (uint32_t)(vertices.size() - 1);
 
     position = glm::vec3(mid2.x, mid2.y, mid2.z);
-    addVertex(position, glm::vec2(0.f), position);
+    vertices.push_back(Vertex(position, glm::vec2(0.f), position));
     uint32_t newIndex2 = (uint32_t)(vertices.size() - 1);
 
     position = glm::vec3(mid3.x, mid3.y, mid3.z);
-    addVertex(position, glm::vec2(0.f), position);
+    vertices.push_back(Vertex(position, glm::vec2(0.f), position));
     uint32_t newIndex3 = (uint32_t)(vertices.size() - 1);
 
     addTempIndices(newIndex1, newIndex2, newIndex3);
@@ -84,15 +84,15 @@ void Icosphere::_smoothSphere(int subdivisions) {
         tmpVertices = vertices;
 
         for (size_t i = 0; i < tmpIndices.size(); i += 3) {
-            index1 = tmpIndices.at(i);
-            index2 = tmpIndices.at(i + 1);
-            index3 = tmpIndices.at(i + 2);
+            index1 = tmpIndices[i];
+            index2 = tmpIndices[i + 1];
+            index3 = tmpIndices[i + 2];
 
-            glm::vec3 a{ tmpVertices.at(index1).position };
+            glm::vec3 a{ tmpVertices[index1].position };
 
-            glm::vec3 b{ tmpVertices.at(index2).position };
+            glm::vec3 b{ tmpVertices[index2].position };
 
-            glm::vec3 c{ tmpVertices.at(index3).position };
+            glm::vec3 c{ tmpVertices[index3].position };
 
             _subdivide(a, b, c, index1, index2, index3);
         }

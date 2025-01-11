@@ -1,9 +1,7 @@
 #include "../../../headers/Engine Core/Post Processing/BloomRenderer.h"
 
-BloomRenderer::BloomRenderer(int windowWidth, int windowHeight) {
+BloomRenderer::BloomRenderer() {
 	quad.createQuad();
-
-	_init(windowWidth, windowHeight);
 }
 
 void BloomRenderer::renderDownsamples(uint32_t srcTexture) {
@@ -24,9 +22,7 @@ void BloomRenderer::renderDownsamples(uint32_t srcTexture) {
 		const BloomMip& mip = mipChain[i];
 
 		glViewport(0, 0, (GLsizei)mip.size.x, (GLsizei)mip.size.y);
-		glFramebufferTexture2D(
-			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mip.texture, 0
-		);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mip.texture, 0);
 
 		quad.renderQuad();
 
@@ -57,9 +53,7 @@ void BloomRenderer::renderUpsamples(float filterRadius) {
 		glBindTexture(GL_TEXTURE_2D, mip.texture);
 
 		glViewport(0, 0, (GLsizei)nextMip.size.x, (GLsizei)nextMip.size.y);
-		glFramebufferTexture2D(
-			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, nextMip.texture, 0
-		);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, nextMip.texture, 0);
 
 		quad.renderQuad();
 	}

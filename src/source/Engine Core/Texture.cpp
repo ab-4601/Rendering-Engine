@@ -63,38 +63,38 @@ bool Texture::loadDDSTexture() {
 	isCompressed = true;
 
 	switch (fourCC) {
-	case FOURCC_DXT1:
-		format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		break;
+		case FOURCC_DXT1:
+			format = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+			break;
 
-	case FOURCC_DXT3:
-		format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-		break;
+		case FOURCC_DXT3:
+			format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+			break;
 
-	case FOURCC_DXT5:
-		format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		break;
+		case FOURCC_DXT5:
+			format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			break;
 
-	case FOURCC_ATI1N:
-		format = GL_COMPRESSED_RED_RGTC1;
-		break;
+		case FOURCC_ATI1N:
+			format = GL_COMPRESSED_RED_RGTC1;
+			break;
 
-	case FOURCC_ATI2N:
-		format = GL_COMPRESSED_RG_RGTC2;
-		break;
+		case FOURCC_ATI2N:
+			format = GL_COMPRESSED_RG_RGTC2;
+			break;
 
-	case FOURCC_BC6H:
-		format = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
-		break;
+		case FOURCC_BC6H:
+			format = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
+			break;
 
-	case FOURCC_BC7:
-		format = GL_COMPRESSED_RGBA_BPTC_UNORM;
-		break;
+		case FOURCC_BC7:
+			format = GL_COMPRESSED_RGBA_BPTC_UNORM;
+			break;
 
-	default:
-		std::cerr << "Unsupported DDS format (invalid fourCC): " << fileLocation << std::endl;
-		file.close();
-		return false;
+		default:
+			std::cerr << "Unsupported DDS format (invalid fourCC): " << fileLocation << std::endl;
+			file.close();
+			return false;
 	}
 
 	file.seekg(0, std::ios::end);

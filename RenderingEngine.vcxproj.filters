@@ -69,7 +69,7 @@
     <ClCompile Include="src\source\Engine Core\Mesh\Geometry\Quad.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\source\Engine Core\Overlay.cpp">
+    <ClCompile Include="src\source\Engine Core\Editor\Overlay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="External Libs\imGUI\imgui.cpp">
@@ -162,6 +162,9 @@
     <ClCompile Include="src\source\Engine Core\Particle System\ParticleSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\source\Engine Core\Post Processing\PostProcessMaster.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\headers\Engine Core\Window.h">
@@ -221,7 +224,7 @@
     <ClInclude Include="src\headers\Engine Core\Entity\BoundingVolume.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\headers\Engine Core\Overlay.h">
+    <ClInclude Include="src\headers\Engine Core\Editor\Overlay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Engine Core\Mesh\Geometry\Quad.h">
@@ -336,6 +339,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Engine Core\Particle System\ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Engine Core\Post Processing\PostProcessMaster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

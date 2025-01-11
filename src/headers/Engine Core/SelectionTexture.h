@@ -14,7 +14,7 @@ private:
 public:
 	SelectionTexture() = default;
 
-	void init(unsigned int windowWidth, unsigned int windowHeight);
+	void init(int windowWidth, int windowHeight);
 
 	void enableWriting() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO); }
 	void disableWriting(GLuint framebuffer = 0) const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer); }
@@ -25,7 +25,7 @@ public:
 		uint32_t primitiveID = 0;
 	};
 
-	PixelInfo readPixel(int x, int y);
+	PixelInfo readPixel(int x, int y) const;
 
 	~SelectionTexture();
 };

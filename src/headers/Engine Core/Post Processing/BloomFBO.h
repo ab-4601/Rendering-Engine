@@ -18,9 +18,14 @@ private:
 	bool isInit = false;
 	std::vector<BloomMip> mMipChain{};
 
+	uint32_t iterations = 6;
+
+	void clearBuffers();
+
 public:
 	BloomFBO() = default;
 
+	void resize(int width, int height);
 	bool _init(int windowWidth, int windowHeight, uint32_t iterations = 6);
 
 	const std::vector<BloomMip>& mipChain() const {

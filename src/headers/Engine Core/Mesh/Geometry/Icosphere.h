@@ -7,11 +7,6 @@ class Icosphere : public Mesh {
 private:
 	std::vector<uint32_t> tempIndices;
 
-	void addVertex(glm::vec3 position, glm::vec2 texel, glm::vec3 normal) {
-		Vertex vertex{ position, texel, normal };
-		this->vertices.push_back(vertex);
-	}
-
 	void addTempIndices(uint32_t a, uint32_t b, uint32_t c) {
 		tempIndices.push_back(a);
 		tempIndices.push_back(b);
@@ -26,9 +21,7 @@ private:
 public:
 	Icosphere(GLenum windingOrder = GL_CW, int subdivisions = 3);
 
-	~Icosphere() {
-		clearMesh();
-	}
+	~Icosphere() = default;
 };
 
 #endif

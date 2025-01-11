@@ -27,9 +27,13 @@ private:
 	Quad quad;
 
 public:
-	BloomRenderer(int windowWidth, int windowHeight);
+	BloomRenderer();
 
-	inline void setKnee(float knee) { this->knee = (knee < 0.f) ? 0.f : knee; }
+	void resize(int width, int height) {
+		mFBO.resize(width, height);
+	}
+
+	void setKnee(float knee) { this->knee = (knee < 0.f) ? 0.f : knee; }
 
 	bool _init(int windowWidth, int windowHeight);
 	void renderBloomTexture(uint32_t srcTexture, float filterRadius, uint32_t currFramebuffer = 0);

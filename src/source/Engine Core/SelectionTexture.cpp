@@ -1,6 +1,6 @@
 #include "../../headers/Engine Core/SelectionTexture.h"
 
-void SelectionTexture::init(unsigned int windowWidth, unsigned int windowHeight) {
+void SelectionTexture::init(int windowWidth, int windowHeight) {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -27,7 +27,7 @@ void SelectionTexture::init(unsigned int windowWidth, unsigned int windowHeight)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-SelectionTexture::PixelInfo SelectionTexture::readPixel(int x, int y) {
+SelectionTexture::PixelInfo SelectionTexture::readPixel(int x, int y) const {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 

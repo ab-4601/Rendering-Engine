@@ -20,6 +20,7 @@ private:
 	uint32_t cameraBuffer = 0;
 
 	float pitch, yaw, roll;
+	float fov = 45.f, nearPlane = ::near_plane, farPlane = ::far_plane, aspect = 16.f / 9.f;
 
 	float movementSpeed, turnSpeed, movementSpeedMultiplier, velocity;
 	CameraData cameraData;
@@ -36,6 +37,22 @@ public:
 
 	void keyFunctionality(const Window* currWindow, float deltaTime);
 	void mouseFunctionality(float xChange, float yChange, float scrollChange);
+
+	float getFOV() const { return fov; }
+	float getNearPlane() const { return nearPlane; }
+	float getFarPlane() const { return farPlane; }
+
+	void setFOV(float fov) {
+		this->fov = fov;
+		cameraData.projection = glm::perspective(glm::radians(this->fov), aspect, nearPlane, farPlane);
+	}
+
+	void setFrustumPlanes(float nearPlane, float farPlane) {
+		this->nearPlane = nearPlane;
+		this->farPlane = farPlane;
+
+		cameraData.projection = glm::perspective(fov, aspect, this->nearPlane, this->farPlane);
+	}
 
 	const glm::mat4& getProjectionMatrix() const { return cameraData.projection; };
 	const glm::vec3& getFrontVector() const { return front; }

@@ -113,7 +113,7 @@ void Mesh::renderMeshWithOutline(Shader& shader, Shader& outlineShader, GLenum r
 	outlineModel = glm::scale(model, glm::vec3(1.04f));
 	outlineShader.setMat4("model", outlineModel);
 
-	drawMesh(GL_TRIANGLES);
+	drawMesh(renderMode);
 
 	glStencilMask(0xFF);
 	glStencilFunc(GL_ALWAYS, 1, 0xFF);

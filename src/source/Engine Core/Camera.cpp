@@ -11,8 +11,11 @@ Camera::Camera(glm::vec3 position, int windowWidth, int windowHeight, glm::vec3 
 	glm::vec3 origin(0.f, 0.f, 0.f);
 	front = glm::normalize(cameraData.position - origin);
 
-	float aspect = (float)windowWidth / windowHeight;
-	cameraData.projection = glm::perspective(glm::radians(45.f), aspect, ::near_plane, ::far_plane);
+	aspect = (float)windowWidth / windowHeight;
+	nearPlane = ::near_plane; farPlane = ::far_plane;
+	fov = 45.f;
+
+	cameraData.projection = glm::perspective(glm::radians(45.f), aspect, nearPlane, farPlane);
 	cameraData.view = generateViewMatrix();
 
 	glGenBuffers(1, &cameraBuffer);

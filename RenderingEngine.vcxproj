@@ -166,7 +166,7 @@
     <ClCompile Include="src\source\Engine Core\Mesh\Terrain\PerlinNoise.cpp" />
     <ClCompile Include="src\source\Engine Core\Mesh\Terrain\Terrain.cpp" />
     <ClCompile Include="src\source\Engine Core\MouseSelector.cpp" />
-    <ClCompile Include="src\source\Engine Core\Overlay.cpp" />
+    <ClCompile Include="src\source\Engine Core\Editor\Overlay.cpp" />
     <ClCompile Include="src\source\Engine Core\Particle System\Particle.cpp" />
     <ClCompile Include="src\source\Engine Core\Particle System\ParticleMaster.cpp" />
     <ClCompile Include="src\source\Engine Core\Particle System\ParticleRenderer.cpp" />
@@ -174,6 +174,7 @@
     <ClCompile Include="src\source\Engine Core\Particle System\ParticleTexture.cpp" />
     <ClCompile Include="src\source\Engine Core\Post Processing\BloomFBO.cpp" />
     <ClCompile Include="src\source\Engine Core\Post Processing\BloomRenderer.cpp" />
+    <ClCompile Include="src\source\Engine Core\Post Processing\PostProcessMaster.cpp" />
     <ClCompile Include="src\source\Engine Core\Post Processing\SSAO.cpp" />
     <ClCompile Include="src\source\Engine Core\SelectionTexture.cpp" />
     <ClCompile Include="src\source\Engine Core\Shader.cpp" />
@@ -227,7 +228,7 @@
     <ClInclude Include="src\headers\Engine Core\Mesh\Terrain\PerlinNoise.h" />
     <ClInclude Include="src\headers\Engine Core\Mesh\Terrain\Terrain.h" />
     <ClInclude Include="src\headers\Engine Core\MouseSelector.h" />
-    <ClInclude Include="src\headers\Engine Core\Overlay.h" />
+    <ClInclude Include="src\headers\Engine Core\Editor\Overlay.h" />
     <ClInclude Include="src\headers\Engine Core\Particle System\Particle.h" />
     <ClInclude Include="src\headers\Engine Core\Particle System\ParticleMaster.h" />
     <ClInclude Include="src\headers\Engine Core\Particle System\ParticleRenderer.h" />
@@ -235,6 +236,7 @@
     <ClInclude Include="src\headers\Engine Core\Particle System\ParticleTexture.h" />
     <ClInclude Include="src\headers\Engine Core\Post Processing\BloomFBO.h" />
     <ClInclude Include="src\headers\Engine Core\Post Processing\BloomRenderer.h" />
+    <ClInclude Include="src\headers\Engine Core\Post Processing\PostProcessMaster.h" />
     <ClInclude Include="src\headers\Engine Core\Post Processing\SSAO.h" />
     <ClInclude Include="src\headers\Engine Core\SelectionTexture.h" />
     <ClInclude Include="src\headers\Engine Core\Shader.h" />

@@ -4,6 +4,8 @@ bool BloomFBO::_init(int windowWidth, int windowHeight, uint32_t iterations) {
 	if (isInit)
 		return true;
 
+	this->iterations = iterations;
+
 	mMipChain.clear();
 
 	glGenFramebuffers(1, &FBO);
@@ -12,7 +14,7 @@ bool BloomFBO::_init(int windowWidth, int windowHeight, uint32_t iterations) {
 	glm::vec2 mipSize{ (float)windowWidth, (float)windowHeight };
 	glm::ivec2 mipIntSize{ windowWidth, windowHeight };
 
-	for (uint32_t i = 0; i < iterations; i++) {
+	for (uint32_t i = 0; i < this->iterations; i++) {
 		BloomMip mip;
 
 		mipSize *= 0.5f;
@@ -51,12 +53,26 @@ bool BloomFBO::_init(int windowWidth, int windowHeight, uint32_t iterations) {
 	return true;
 }
 
-BloomFBO::~BloomFBO() {
-	if (FBO != 0)
+void BloomFBO::resize(int width, int height) {
+	isInit = false;
+	clearBuffers();
+	_init(width, height, this->iterations);
+}
+
+void BloomFBO::clearBuffers() {
+	if (FBO != 0) {
 		glDeleteFramebuffers(1, &FBO);
+		FBO = 0;
+	}
 
 	if (mMipChain.size() != 0) {
-		for (size_t i = 0; i < mMipChain.size(); i++)
-			glDeleteTextures(1, &mMipChain.at(i).texture);
+		for (size_t i = 0; i < mMipChain.size(); i++) {
+			glDeleteTextures(1, &mMipChain[i].texture);
+			mMipChain[i].texture = 0;
+		}
 	}
+}
+
+BloomFBO::~BloomFBO() {
+	clearBuffers();
 }

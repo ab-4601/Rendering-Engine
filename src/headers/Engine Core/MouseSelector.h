@@ -11,7 +11,7 @@ private:
 	SelectionTexture pixelInfo;
 
 public:
-	MouseSelector(unsigned int windowWidth, unsigned int windowHeight);
+	MouseSelector(int windowWidth, int windowHeight);
 
 	void pickingPhase(const std::vector<Mesh*>& meshes, uint32_t framebuffer = 0);
 	int mouseSelectionResult(int windowHeight, int x, int y);

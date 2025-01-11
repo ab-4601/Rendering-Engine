@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../Engine Core/Skybox.h"
-#include "../Engine Core/Overlay.h"
+#include "../Engine Core/Editor/Overlay.h"
 #include "../Engine Core/HDR.h"
 #include "../Engine Core/Post Processing/BloomRenderer.h"
 #include "../Engine Core/MouseSelector.h"
@@ -20,6 +20,7 @@
 #include "../Engine Core/Lights/DirectionalLight.h"
 #include "../Engine Core/Lights/SpotLight.h"
 #include "../Engine Core/Particle System/ParticleSystem.h"
+#include "../Engine Core/Post Processing/PostProcessMaster.h"
 #include "../Scene Core/Grid.h"
 
 class Application {
@@ -53,13 +54,14 @@ private:
 
     glm::vec2 mouseClickCoords{ 0.f };
 
+    int windowWidth{ 0 }, windowHeight{ 0 };
+
     Window window{};
     Camera camera{ {-300, 500, 0}, window.getBufferWidth(), window.getBufferHeight() };
-    Overlay gui{ window.getGlfwWindow() };
-    HDR hdrBuffer{ window.getBufferWidth(), window.getBufferHeight() };
-    BloomRenderer bloom{ window.getBufferWidth(), window.getBufferHeight() };
+    Overlay overlay{ window };
+    HDR hdrBuffer;
     Grid grid{};
-    MouseSelector selection{ window.getWindowWidth(), window.getWindowHeight() };
+    MouseSelector selection{ window.getBufferWidth(), window.getBufferHeight() };
     CoordinateSystem coordSystem;
     Skybox skybox{ window.getBufferWidth(), window.getBufferHeight() };
     DirectionalLight skylight{ 0.1f, 0.5f, { 4000.f, 4000.f, 0.f }, { 1.f, 1.f, 1.f } };
@@ -67,6 +69,7 @@ private:
     CascadedShadows csm{ window.getBufferWidth(), window.getBufferHeight(), 0.5f, 20, 6, 6 };
     GBuffer gbuffer{ window.getBufferWidth(), window.getBufferHeight() };
     SSAO ssao{ window.getBufferWidth(), window.getBufferHeight() };
+    PostProcessMaster postProcess{ window.getBufferWidth(), window.getBufferHeight() };
 
     std::vector<PointLight*> pointLights{ ::MAX_POINT_LIGHTS, nullptr };
     std::vector<SpotLight*> spotLights{ ::MAX_SPOT_LIGHTS, nullptr };

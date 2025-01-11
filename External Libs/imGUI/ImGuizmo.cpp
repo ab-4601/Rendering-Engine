@@ -1407,7 +1407,7 @@ namespace IMGUIZMO_NAMESPACE
             {
                bool hasTranslateOnAxis = Contains(op, static_cast<OPERATION>(TRANSLATE_X << i));
                float markerScale = hasTranslateOnAxis ? 1.4f : 1.0f;
-               ImVec2 baseSSpace = worldToPos(dirAxis * 0.1f * gContext.mScreenFactor, gContext.mMVP);
+               ImVec2 baseSSpace = worldToPos(dirAxis * 0.2f * gContext.mScreenFactor, gContext.mMVP);
                ImVec2 worldDirSSpaceNoScale = worldToPos(dirAxis * markerScale * gContext.mScreenFactor, gContext.mMVP);
                ImVec2 worldDirSSpace = worldToPos((dirAxis * markerScale * scaleDisplay[i]) * gContext.mScreenFactor, gContext.mMVP);
 
@@ -1426,7 +1426,7 @@ namespace IMGUIZMO_NAMESPACE
 
                if (gContext.mAxisFactor[i] < 0.f)
                {
-                  DrawHatchedAxis(dirAxis * scaleDisplay[i]);
+                   drawList->AddLine(baseSSpace, worldDirSSpace, colors[i + 1], gContext.mStyle.ScaleLineThickness);
                }
             }
          }
@@ -1572,7 +1572,7 @@ namespace IMGUIZMO_NAMESPACE
             // draw axis
             if (belowAxisLimit && Intersects(op, static_cast<OPERATION>(TRANSLATE_X << i)))
             {
-               ImVec2 baseSSpace = worldToPos(dirAxis * 0.1f * gContext.mScreenFactor, gContext.mMVP);
+               ImVec2 baseSSpace = worldToPos(dirAxis * 0.2f * gContext.mScreenFactor, gContext.mMVP);
                ImVec2 worldDirSSpace = worldToPos(dirAxis * gContext.mScreenFactor, gContext.mMVP);
 
                drawList->AddLine(baseSSpace, worldDirSSpace, colors[i + 1], gContext.mStyle.TranslationLineThickness);
@@ -1591,7 +1591,7 @@ namespace IMGUIZMO_NAMESPACE
 
                if (gContext.mAxisFactor[i] < 0.f)
                {
-                  DrawHatchedAxis(dirAxis);
+                   drawList->AddLine(baseSSpace, worldDirSSpace, colors[i + 1], gContext.mStyle.TranslationLineThickness);
                }
             }
          }
