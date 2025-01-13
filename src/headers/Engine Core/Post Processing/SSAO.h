@@ -46,12 +46,19 @@ private:
 	}
 
 	void ssaoBlur();
+	void clearBuffers();
 
 public:
 	SSAO(int windowWidth, int windowHeight);
 
 	uint32_t occlusionBuffer() const { return this->colorBufferBlur; }
 
+	void resize(int width, int height) {
+		scrResolution = glm::vec2((float)width, (float)height);
+
+		clearBuffers();
+		_init(width, height);
+	}
 	void setRadius(float radius) { this->radius = radius; }
 	void setBias(float bias) { this->bias = bias; }
 	void setOcclusionPower(float power) { this->occlusionPower = power; }
@@ -60,8 +67,7 @@ public:
 	void calcSSAO(uint32_t gPosition, uint32_t gNormal, uint32_t currFramebuffer = 0);
 
 	~SSAO() {
-		if (this->FBO != 0)
-			glDeleteFramebuffers(1, &this->FBO);
+		clearBuffers();
 	}
 };
 

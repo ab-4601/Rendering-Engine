@@ -13,6 +13,7 @@ private:
 public:
 	MouseSelector(int windowWidth, int windowHeight);
 
+	void resize(int width, int height) { pixelInfo.resize(width, height); }
 	void pickingPhase(const std::vector<Mesh*>& meshes, uint32_t framebuffer = 0);
 	int mouseSelectionResult(int windowHeight, int x, int y);
 

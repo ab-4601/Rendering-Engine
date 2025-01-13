@@ -35,12 +35,17 @@ public:
 
 	uint32_t getColorBuffer() const { return colorBuffer; }
 
-	void resizeBuffers(int width, int height) {
+	void resize(int width, int height, bool isMSAA = false) {
 		clearBuffers();
+
+		screenDimensions.x = width;
+		screenDimensions.y = height;
 
 		bloom.resize(width, height);
 		_init(width, height);
-		_initIntermediateFBO(width, height);
+
+		if(isMSAA)
+			_initIntermediateFBO(width, height);
 	}
 
 	void postProcessingPass(uint32_t hdrBuffer, bool applyBloom, float knee, float filterRadius, float exposure);
@@ -52,7 +57,7 @@ public:
 		glBlitFramebuffer(
 			0, 0, screenDimensions.x, screenDimensions.y,
 			0, 0, screenDimensions.x, screenDimensions.y,
-			GL_COLOR_BUFFER_BIT, GL_LINEAR
+			GL_COLOR_BUFFER_BIT, GL_NEAREST
 		);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);

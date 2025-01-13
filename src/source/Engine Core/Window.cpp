@@ -82,16 +82,27 @@ void Window::getMouseButton(GLFWwindow* window, int button, int action, int mods
 void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-    glfwGetFramebufferSize(currWindow->window, &currWindow->bufferWidth, &currWindow->bufferHeight);
+    currWindow->bufferWidth = width;
+    currWindow->bufferHeight = height;
+
+    //glfwGetFramebufferSize(currWindow->window, &currWindow->bufferWidth, &currWindow->bufferHeight);
     glfwGetWindowSize(currWindow->window, &currWindow->windowWidth, &currWindow->windowHeight);
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, currWindow->bufferWidth, currWindow->bufferHeight);
 }
 
 void Window::windowFocusCallback(GLFWwindow* window, int focused) {
     Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     currWindow->isWindowFocused = (bool)focused;
+}
+
+void Window::windowRefreshCallback(GLFWwindow* window) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    glClearColor(0.f, 0.01f, 0.01f, 1.f);
+
+    glfwSwapBuffers(window);
 }
 
 void Window::setupWindow() {
@@ -111,7 +122,7 @@ void Window::setupWindow() {
     // Allow forward compatibility
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    if (windowWidth == 0 || windowHeight == 0) {
+    if (windowWidth == 0 && windowHeight == 0) {
         const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -135,13 +146,8 @@ void Window::setupWindow() {
         exit(1);
     }
 
-    // Get buffer size information
     glfwGetFramebufferSize(window, &bufferWidth, &bufferHeight);
-
-    // Set context for GLEW to use
     glfwMakeContextCurrent(window);
-
-    // Handle key and mouse input
     createCallbacks();
 
     // Lock cursor to window
@@ -159,14 +165,12 @@ void Window::setupWindow() {
         exit(1);
     }
 
-    // Enable depth buffer to avoid drawing over faces
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);
     glEnable(GL_CULL_FACE);
 
-    // Create viewport
     glViewport(0, 0, bufferWidth, bufferHeight);
 
     glfwSetWindowUserPointer(window, this);

@@ -67,6 +67,19 @@ void SSAO::genNoiseTexture(int windowWidth, int windowHeight) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void SSAO::clearBuffers() {
+	if (FBO != 0) {
+		glDeleteFramebuffers(1, &FBO);
+		glDeleteTextures(1, &colorBuffer);
+
+		glDeleteFramebuffers(1, &blurFBO);
+		glDeleteTextures(1, &colorBufferBlur);
+
+		FBO = 0; colorBuffer = 0;
+		blurFBO = 0; colorBufferBlur = 0;
+	}
+}
+
 void SSAO::_init(int windowWidth, int windowHeight) {
 	glGenFramebuffers(1, &FBO);
 	glGenFramebuffers(1, &blurFBO);

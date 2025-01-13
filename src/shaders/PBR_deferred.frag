@@ -73,7 +73,7 @@ uniform vec3 offsetTexSize;
 uniform bool enableSSAO;
 uniform bool calcShadows;
 
-layout (std430, binding = 0) buffer cameraSpaceVariables {
+layout (std430, binding = 0) buffer CameraData {
 	mat4 projection;
 	mat4 view;
 	vec3 cameraPosition;

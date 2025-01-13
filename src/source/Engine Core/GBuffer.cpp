@@ -1,18 +1,7 @@
 #include "../../headers/Engine Core/GBuffer.h"
 
 GBuffer::GBuffer(int windowWidth, int windowHeight) {
-	viewportMatrix = {
-		glm::vec4((float)windowWidth / 2.f, 0.f, 0.f, (float)windowWidth / 2.f),
-		glm::vec4(0.f, (float)windowHeight / 2.f, 0.f, (float)windowHeight / 2.f),
-		glm::vec4(0.f, 0.f, 1.f, 0.f),
-		glm::vec4(0.f, 0.f, 0.f, 1.f)
-	};
-
 	_init(windowWidth, windowHeight);
-
-	shader.useShader();
-	shader.setMat4("viewportMatrix", viewportMatrix);
-	shader.endShader();
 }
 
 void GBuffer::genTexture(uint32_t& texID, GLenum colorAttachment, int windowWidth, int windowHeight) {
@@ -26,7 +15,29 @@ void GBuffer::genTexture(uint32_t& texID, GLenum colorAttachment, int windowWidt
 	glFramebufferTexture2D(GL_FRAMEBUFFER, colorAttachment, GL_TEXTURE_2D, texID, 0);
 }
 
+void GBuffer::clearBuffers() {
+	if (FBO != 0) {
+		glDeleteFramebuffers(1, &FBO);
+
+		uint32_t textures[] = { gPosition, gNormal, gAlbedo, gMetallic };
+		glDeleteTextures(4, textures);
+
+		FBO = 0; gPosition = 0; gNormal = 0; gAlbedo = 0; gMetallic = 0;
+	}
+}
+
 void GBuffer::_init(int windowWidth, int windowHeight) {
+	viewportMatrix = {
+		glm::vec4((float)windowWidth / 2.f, 0.f, 0.f, (float)windowWidth / 2.f),
+		glm::vec4(0.f, (float)windowHeight / 2.f, 0.f, (float)windowHeight / 2.f),
+		glm::vec4(0.f, 0.f, 1.f, 0.f),
+		glm::vec4(0.f, 0.f, 0.f, 1.f)
+	};
+
+	shader.useShader();
+	shader.setMat4("viewportMatrix", viewportMatrix);
+	shader.endShader();
+
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 

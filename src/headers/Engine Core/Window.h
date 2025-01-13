@@ -31,6 +31,7 @@ private:
 	static void getMouseButton(GLFWwindow* window, int button, int action, int mods);
 	static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 	static void windowFocusCallback(GLFWwindow* window, int focused);
+	static void windowRefreshCallback(GLFWwindow* window);
 
 	void createCallbacks() {
 		glfwSetKeyCallback(window, handleInput);
@@ -39,6 +40,7 @@ private:
 		glfwSetMouseButtonCallback(window, getMouseButton);
 		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 		glfwSetWindowFocusCallback(window, windowFocusCallback);
+		glfwSetWindowRefreshCallback(window, windowRefreshCallback);
 	}
 
 public:

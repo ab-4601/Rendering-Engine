@@ -27,6 +27,28 @@ void SelectionTexture::init(int windowWidth, int windowHeight) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void SelectionTexture::clearBuffers() {
+	if (FBO != 0) {
+		glDeleteFramebuffers(1, &FBO);
+		FBO = 0;
+	}
+
+	if (selectionTexture != 0) {
+		glDeleteTextures(1, &selectionTexture);
+		selectionTexture = 0;
+	}
+
+	if (depthTexture != 0) {
+		glDeleteTextures(1, &depthTexture);
+		depthTexture = 0;
+	}
+
+	if (depthBuffer != 0) {
+		glDeleteRenderbuffers(1, &depthBuffer);
+		depthBuffer = 0;
+	}
+}
+
 SelectionTexture::PixelInfo SelectionTexture::readPixel(int x, int y) const {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
@@ -41,15 +63,5 @@ SelectionTexture::PixelInfo SelectionTexture::readPixel(int x, int y) const {
 }
 
 SelectionTexture::~SelectionTexture() {
-	if (FBO != 0)
-		glDeleteFramebuffers(1, &FBO);
-
-	if (selectionTexture != 0)
-		glDeleteTextures(1, &selectionTexture);
-
-	if (depthTexture != 0)
-		glDeleteTextures(1, &depthTexture);
-
-	if (depthBuffer != 0)
-		glDeleteRenderbuffers(1, &depthBuffer);
+	clearBuffers();
 }

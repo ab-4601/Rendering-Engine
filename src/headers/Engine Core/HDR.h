@@ -23,14 +23,13 @@ public:
 	void _init(int width, int height);
 	void _initMSAA(int width, int height);
 
-	void resize(int width, int height) {
+	void resize(int width, int height, bool isMSAA = false) {
 		clearBuffers();
-		_init(width, height);
-	}
 
-	void resizeMSAA(int width, int height) {
-		clearBuffers();
-		_initMSAA(width, height);
+		if (isMSAA) 
+			_initMSAA(width, height);
+		else
+			_init(width, height);
 	}
 
 	uint32_t getFramebufferID() const { return FBO; }

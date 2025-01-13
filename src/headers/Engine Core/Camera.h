@@ -47,7 +47,12 @@ public:
 		cameraData.projection = glm::perspective(glm::radians(this->fov), aspect, nearPlane, farPlane);
 	}
 
-	void setFrustumPlanes(float nearPlane, float farPlane) {
+	void setProjectionAspect(float aspect) {
+		this->aspect = aspect;
+		cameraData.projection = glm::perspective(glm::radians(fov), this->aspect, nearPlane, farPlane);
+	}
+
+	void setFrustumLimits(float nearPlane, float farPlane) {
 		this->nearPlane = nearPlane;
 		this->farPlane = farPlane;
 

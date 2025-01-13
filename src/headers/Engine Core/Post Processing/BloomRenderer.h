@@ -30,6 +30,10 @@ public:
 	BloomRenderer();
 
 	void resize(int width, int height) {
+		srcViewportSize = glm::ivec2(width, height);
+		srcViewportSizeFLT = glm::vec2((float)width, (float)height);
+
+		isInit = false;
 		mFBO.resize(width, height);
 	}
 

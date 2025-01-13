@@ -16,7 +16,7 @@ void Overlay::_init(const Window& window) {
     IM_ASSERT(mainfont != NULL);
 
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    //io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGuiStyle* style = &ImGui::GetStyle();
     style->WindowBorderSize = 0.f;
@@ -26,8 +26,8 @@ void Overlay::_init(const Window& window) {
     style->Colors[ImGuiCol_TitleBg] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TitleBgActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
-    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.05f, 0.05f, 0.05f, 1.f);
+    style->Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.5f);
+    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.f);
     style->Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
     style->Colors[ImGuiCol_CheckMark] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_Header] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
@@ -35,7 +35,7 @@ void Overlay::_init(const Window& window) {
     style->Colors[ImGuiCol_HeaderHovered] = style->Colors[ImGuiCol_FrameBgHovered];
     style->Colors[ImGuiCol_SliderGrab] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_Tab] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
+    style->Colors[ImGuiCol_Tab] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
     style->Colors[ImGuiCol_TabUnfocused] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TabActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TabHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
@@ -103,6 +103,19 @@ void Overlay::CreateSceneViewport(uint32_t textureID, const Camera& camera, Mesh
 
     ImGui::Image((intptr_t)textureID, viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
 
+    if (mesh != nullptr) {
+        ImGuizmo::AllowAxisFlip(false);
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::Enable(true);
+        ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+        ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
+
+        ImGuizmo::Manipulate(
+            glm::value_ptr(camera.generateViewMatrix()), glm::value_ptr(camera.getProjectionMatrix()),
+            transformOperation, ImGuizmo::WORLD, glm::value_ptr(mesh->getModelMatrix())
+        );
+    }
+
     ImGui::PopStyleVar(1);
     ImGui::End();
 }
@@ -128,7 +141,7 @@ void Overlay::DrawVec3Control(const std::string& label, float* values, float res
     ImGui::NextColumn();
 
     ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(1.f, 1.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.5f, 0.5f));
 
     float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.f;
     ImVec2 buttonSize = { lineHeight + 3.f, lineHeight };
@@ -300,6 +313,7 @@ void Overlay::render(const Window& window, float& exposure, float& shadowRadius,
     ImGui::NewLine();
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
+    //ImGui::Text("Framebuffer dimensions: (%.2f, %.2f)", (float)window.getBufferWidth(), (float)window.getBufferHeight());
     ImGui::End();
 
     if (currMesh != nullptr) {
@@ -318,14 +332,14 @@ void Overlay::render(const Window& window, float& exposure, float& shadowRadius,
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        glfwMakeContextCurrent(window.getGlfwWindow());
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(window.getGlfwWindow());
     }
 }
 
 void Overlay::manipulate(int windowWidth, int windowHeight, const Camera& camera, Mesh* mesh) {
-    ImGuizmo::AllowAxisFlip(true);
+    ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::Enable(true);
     ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());

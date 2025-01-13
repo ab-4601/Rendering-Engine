@@ -10,12 +10,12 @@ Application::Application() {
     Mesh::meshList.clear();
     Model::modelList.clear();
 
-    windowWidth = window.getBufferWidth();
-    windowHeight = window.getBufferHeight();
+    bufferWidth = window.getBufferWidth();
+    bufferHeight = window.getBufferHeight();
 
     viewportMatrix = glm::mat4{
-        glm::vec4((float)windowWidth / 2.f, 0.f, 0.f, (float)windowWidth / 2.f),
-        glm::vec4(0.f, (float)windowHeight / 2.f, 0.f, (float)windowHeight / 2.f),
+        glm::vec4((float)bufferWidth / 2.f, 0.f, 0.f, (float)bufferWidth / 2.f),
+        glm::vec4(0.f, (float)bufferHeight / 2.f, 0.f, (float)bufferHeight / 2.f),
         glm::vec4(0.f, 0.f, 1.f, 0.f),
         glm::vec4(0.f, 0.f, 0.f, 1.f)
     };
@@ -120,9 +120,9 @@ void Application::setGlobalPBRUniforms(Shader& shader) {
 
 void Application::start() {
     glm::vec3 lightDirection(3000.f, 3000.f, 0.f);
-    glm::vec3 pointLightPosition1(20.0, 20.f, 20.f);
+    glm::vec3 pointLightPosition1(20.f, 20.f, 20.f);
     glm::vec3 pointLightPosition2(100.f, 30.f, 100.f);
-    glm::vec3 spotLightPosition(300.0, 80.f, 300.f);
+    glm::vec3 spotLightPosition(300.f, 80.f, 300.f);
 
     /*PointLight pointLight1{ 1.f, 1.f, pointLightPosition1, 0.01f, 0.01f, 0.01f, glm::vec3(300.f) };
     pointLights[0] = &pointLight1;
@@ -214,7 +214,8 @@ void Application::start() {
     glm::vec3 fireParticlePosition{ 1125.f, 120.f, 400.f };
     ParticleSystem fireSystem(particleColor, 30.f, -30.f, 1.f, 30.f, fire);*/
 
-    hdrBuffer._initMSAA(window.getBufferWidth(), window.getBufferHeight());
+    hdrBuffer._initMSAA(bufferWidth, bufferHeight);
+    //hdrBuffer._init(bufferWidth, bufferHeight);
 
     setGlobalPBRUniforms(forwardShader);
     //setGlobalPBRUniforms(deferredShader);
@@ -228,14 +229,22 @@ void Application::start() {
 
 void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
 {
-    glfwPollEvents();
+    if (window.getBufferWidth() != bufferWidth || window.getBufferHeight() != bufferHeight) {
+        bufferWidth = window.getBufferWidth();
+        bufferHeight = window.getBufferHeight();
 
-    if (window.getBufferWidth() != windowWidth || window.getBufferHeight() != windowHeight) {
-        windowWidth = window.getBufferWidth();
-        windowHeight = window.getBufferHeight();
+        hdrBuffer.resize(bufferWidth, bufferHeight, true);
+        postProcess.resize(bufferWidth, bufferHeight, true);
+        selection.resize(bufferWidth, bufferHeight);
 
-        postProcess.resizeBuffers(windowWidth, windowHeight);
-        hdrBuffer.resizeMSAA(windowWidth, windowHeight);
+        camera.setProjectionAspect((float)bufferWidth / bufferHeight);
+
+        viewportMatrix = glm::mat4 {
+            glm::vec4((float)bufferWidth / 2.f, 0.f, 0.f, (float)bufferWidth / 2.f),
+            glm::vec4(0.f, (float)bufferHeight / 2.f, 0.f, (float)bufferHeight / 2.f),
+            glm::vec4(0.f, 0.f, 1.f, 0.f),
+            glm::vec4(0.f, 0.f, 0.f, 1.f)
+        };
     }
 
     // Calculate delta time
@@ -252,10 +261,10 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
     if (elapsedTime >= 0.016f)
     {
+        overlay.newFrame();
+
         currentFramebuffer = 0;
         elapsedTime = 0.f;
-
-        overlay.newFrame();
 
         skylight.updateLightLocation(lightDirection);
 
@@ -280,17 +289,10 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
         if (enableShadows) {
             csm.calculateShadows(
-                window.getBufferWidth(), window.getBufferHeight(), Mesh::meshList,
+                bufferWidth, bufferHeight, Mesh::meshList,
                 Model::modelList, lightDirection, currentFramebuffer
             );
         }
-
-        ssao.setRadius(ssaoRadius);
-        ssao.setBias(ssaoBias);
-        ssao.setOcclusionPower(ssaoOcclusionPower);
-        gbuffer.updateWireframeBool(drawWireframe);
-        gbuffer.updateBuffer(outlineShader, index, Mesh::meshList, Model::modelList, currentFramebuffer);
-        ssao.calcSSAO(gbuffer.positionBuffer(), gbuffer.normalBuffer(), currentFramebuffer);
 
         selection.pickingPhase(Mesh::meshList, currentFramebuffer);
 
@@ -298,7 +300,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !overlay.isMouseOverWindow(ImGuiMouseButton_Left)) {
             index = selection.mouseSelectionResult(
-                window.getBufferHeight(), (int)mouseClickCoords.x, (int)mouseClickCoords.y
+                bufferHeight, (int)mouseClickCoords.x, (int)mouseClickCoords.y
             );
         }
 
@@ -317,7 +319,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
         if (index < (int)Mesh::meshList.size() && index != -1) {
             overlay._updateTransformOperation(window);
-            overlay.manipulate(window.getWindowWidth(), window.getWindowHeight(), camera, Mesh::meshList[index]);
+            overlay.manipulate(bufferWidth, bufferHeight, camera, Mesh::meshList[index]);
             Mesh::meshList[index]->renderMeshWithOutline(forwardShader, outlineShader);
         }
 
@@ -334,7 +336,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 // ----------------------------------------------------------------------------------------------------------------
 
         if (displayCoordinateSystem)
-            coordSystem.drawCoordinateSystem(window.getBufferWidth(), window.getBufferHeight(), camera);
+            coordSystem.drawCoordinateSystem(bufferWidth, bufferHeight, camera);
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -356,7 +358,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         }
 
         if (index != -1) {
-            overlay.CreateSceneViewport(ssao.occlusionBuffer(), camera, Mesh::meshList[index]);
+            //overlay.CreateSceneViewport(postProcess.getColorBuffer(), camera, Mesh::meshList[index]);
 
             overlay.render(
                 window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
@@ -365,7 +367,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
             );
         }
         else {
-            overlay.CreateSceneViewport(ssao.occlusionBuffer(), camera);
+            //overlay.CreateSceneViewport(postProcess.getColorBuffer(), camera);
 
             overlay.render(
                 window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius,
@@ -376,19 +378,24 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
         glfwSwapBuffers(window.getMainWindow());
     }
+
+    glfwPollEvents();
 }
 
 void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
 {
-    glfwPollEvents();
+    if (window.getBufferWidth() != bufferWidth || window.getBufferHeight() != bufferHeight) {
+        bufferWidth = window.getBufferWidth();
+        bufferHeight = window.getBufferHeight();
 
-    /*if (window.getBufferWidth() != windowWidth || window.getBufferHeight() != windowHeight) {
-        windowWidth = window.getBufferWidth();
-        windowHeight = window.getBufferHeight();
+        postProcess.resize(bufferWidth, bufferHeight);
+        hdrBuffer.resize(bufferWidth, bufferHeight);
+        selection.resize(bufferWidth, bufferHeight);
+        ssao.resize(bufferWidth, bufferHeight);
+        gbuffer.resize(bufferWidth, bufferHeight);
 
-        postProcess.resizeBuffers(windowWidth, windowHeight);
-        hdrBuffer.resize(windowWidth, windowHeight);
-    }*/
+        camera.setProjectionAspect((float)bufferWidth / bufferHeight);
+    }
 
     currTime = (float)glfwGetTime();
     deltaTime = currTime - lastTime;
@@ -420,7 +427,7 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 
         if (enableShadows) {
             csm.calculateShadows(
-                window.getBufferWidth(), window.getBufferHeight(), Mesh::meshList,
+                bufferWidth, bufferHeight, Mesh::meshList,
                 Model::modelList, lightDirection, currentFramebuffer
             );
         }
@@ -431,7 +438,7 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !overlay.isMouseOverWindow(ImGuiMouseButton_Left)) {
             index = selection.mouseSelectionResult(
-                window.getWindowHeight(), (int)mouseClickCoords.x, (int)mouseClickCoords.y
+                bufferHeight, (int)mouseClickCoords.x, (int)mouseClickCoords.y
             );
         }
 
@@ -467,31 +474,31 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 
         if (index < (int)Mesh::meshList.size() && index != -1) {
             overlay._updateTransformOperation(window);
-            overlay.manipulate(window.getWindowWidth(), window.getWindowHeight(), camera, Mesh::meshList[index]);
+            overlay.manipulate(bufferWidth, bufferHeight, camera, Mesh::meshList[index]);
         }
 
         quad.renderQuad();
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        if (drawSkybox)
-            skybox.renderSkybox();
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        lightSources.renderLightSources(
-            skylight, pointLights, spotLights, pointLightCount, spotLightCount
-        );
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        if (displayGrid)
-            grid.renderGrid();
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        if (displayCoordinateSystem)
-            coordSystem.drawCoordinateSystem(window.getBufferWidth(), window.getBufferHeight(), camera);
+//        if (drawSkybox)
+//            skybox.renderSkybox();
+//
+//// ----------------------------------------------------------------------------------------------------------------
+//
+//        lightSources.renderLightSources(
+//            skylight, pointLights, spotLights, pointLightCount, spotLightCount
+//        );
+//
+//// ----------------------------------------------------------------------------------------------------------------
+//
+//        if (displayGrid)
+//            grid.renderGrid();
+//
+//// ----------------------------------------------------------------------------------------------------------------
+//
+//        if (displayCoordinateSystem)
+//            coordSystem.drawCoordinateSystem(bufferWidth, bufferHeight, camera);
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -512,19 +519,27 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
             postProcess.blitToDefaultFramebuffer();
         }
 
-        if (index != -1)
+        if (index != -1) {
+            overlay.CreateSceneViewport(hdrBuffer.getColorbufferID(), camera, Mesh::meshList[index]);
+
             overlay.render(
                 window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius, ssaoBias, ssaoOcclusionPower,
                 drawSkybox, displayGrid, displayCoordinateSystem,
                 enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection, Mesh::meshList[index]
             );
-        else
+        }
+        else {
+            overlay.CreateSceneViewport(hdrBuffer.getColorbufferID(), camera);
+
             overlay.render(
                 window, exposure, shadowRadius, filterRadius, bloomThreshold, ssaoRadius, ssaoBias, ssaoOcclusionPower,
                 drawSkybox, displayGrid, displayCoordinateSystem,
                 enableBloom, drawWireframe, enableShadows, enableHDR, enableSSAO, lightDirection
             );
+        }
 
         glfwSwapBuffers(window.getMainWindow());
     }
+
+    glfwPollEvents();
 }

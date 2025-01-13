@@ -229,15 +229,15 @@ void Skybox::_generateBRDFMap() {
 }
 
 void Skybox::renderSkybox() {
-	glDepthFunc(GL_LEQUAL);
+	glFrontFace(GL_CCW);
 
 	skyboxShader.useShader();
+	glDepthFunc(GL_LEQUAL);
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap);
 
 	renderCube();
 
 	glDepthFunc(GL_LESS);
-
 	skyboxShader.endShader();
 }

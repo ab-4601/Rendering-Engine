@@ -211,7 +211,7 @@ void PostProcessMaster::postProcessingPassMSAA(uint32_t hdrFBO, bool applyBloom,
 
 	if (applyBloom) {
 		bloom.setKnee(knee);
-		bloom.renderBloomTexture(screenBuffer, filterRadius, 0);
+		bloom.renderBloomTexture(screenBuffer, filterRadius, FBO);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);

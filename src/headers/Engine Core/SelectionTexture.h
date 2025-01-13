@@ -11,10 +11,17 @@ private:
 	uint32_t depthTexture = 0;
 	uint32_t depthBuffer = 0;
 
+	void clearBuffers();
+
 public:
 	SelectionTexture() = default;
 
 	void init(int windowWidth, int windowHeight);
+
+	void resize(int width, int height) {
+		clearBuffers();
+		init(width, height);
+	}
 
 	void enableWriting() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO); }
 	void disableWriting(GLuint framebuffer = 0) const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer); }

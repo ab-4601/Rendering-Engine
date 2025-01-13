@@ -86,7 +86,7 @@ uniform float cascadePlanes[MAX_CASCADES];
 uniform float radius;
 uniform vec3 offsetTexSize;
 
-layout (std140, binding = 0) uniform cameraSpaceVariables {
+layout (std140, binding = 0) uniform CameraData {
 	mat4 projection;
 	mat4 view;
 	vec3 cameraPosition;

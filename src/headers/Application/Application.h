@@ -54,7 +54,7 @@ private:
 
     glm::vec2 mouseClickCoords{ 0.f };
 
-    int windowWidth{ 0 }, windowHeight{ 0 };
+    int bufferWidth{ 0 }, bufferHeight{ 0 };
 
     Window window{};
     Camera camera{ {-300, 500, 0}, window.getBufferWidth(), window.getBufferHeight() };

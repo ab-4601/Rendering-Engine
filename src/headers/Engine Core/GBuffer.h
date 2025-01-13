@@ -17,6 +17,8 @@ private:
 	void genTexture(uint32_t& texID, GLenum colorAttachment, int windowWidth, int windowHeight);
 	void _init(int windowWidth, int windowHeight);
 
+	void clearBuffers();
+
 public:
 	GBuffer(int windowWidth, int windowHeight);
 
@@ -26,18 +28,17 @@ public:
 	uint32_t albedoBuffer() const { return gAlbedo; }
 	uint32_t metallicBuffer() const { return gMetallic; }
 
+	void resize(int width, int height) {
+		clearBuffers();
+		_init(width, height);
+	}
+
 	void updateWireframeBool(bool drawWireframe) { this->drawWireframe = drawWireframe; }
 	void updateBuffer(Shader& outlineShader, int meshID, const std::vector<Mesh*>& meshes,
 		const std::vector<Model*>& models, uint32_t currFramebuffer = 0);
 
 	~GBuffer() {
-		if (FBO != 0)
-			glDeleteFramebuffers(1, &FBO);
-
-		if (gPosition != 0) {
-			uint32_t textures[] = { gPosition, gNormal, gAlbedo, gMetallic };
-			glDeleteTextures(4, textures);
-		}
+		clearBuffers();
 	}
 };
 
