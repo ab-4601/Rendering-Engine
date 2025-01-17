@@ -78,10 +78,10 @@
     <ClCompile Include="src\source\Scene Core\Grid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\source\Engine Core\MouseSelector.cpp">
+    <ClCompile Include="src\source\Engine Core\Editor\MouseSelector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\source\Engine Core\SelectionTexture.cpp">
+    <ClCompile Include="src\source\Engine Core\Editor\SelectionTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\source\Engine Core\Shadows\CascadedShadows.cpp">
@@ -248,10 +248,10 @@
     <ClInclude Include="src\headers\Scene Core\Grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\headers\Engine Core\MouseSelector.h">
+    <ClInclude Include="src\headers\Engine Core\Editor\MouseSelector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\headers\Engine Core\SelectionTexture.h">
+    <ClInclude Include="src\headers\Engine Core\Editor\SelectionTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Engine Core\Shadows\CascadedShadows.h">

@@ -1,4 +1,4 @@
-#include "../../headers/Engine Core/SelectionTexture.h"
+#include "../../../headers/Engine Core/Editor/SelectionTexture.h"
 
 void SelectionTexture::init(int windowWidth, int windowHeight) {
 	glGenFramebuffers(1, &FBO);

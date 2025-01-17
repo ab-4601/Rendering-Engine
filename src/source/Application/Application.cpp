@@ -197,10 +197,10 @@ void Application::start() {
 
     //isometricRoom->setModelMatrix(model);
 
-    /*Model sponza(
+    Model sponza(
         "src/Content/Models/Sponza/Sponza.gltf",
         "src/Content/Models/Sponza/"
-    );*/
+    );
 
     CoordinateSystem::Widget().createCoordinateSystem();
 
@@ -213,7 +213,6 @@ void Application::start() {
     ParticleSystem fireSystem(particleColor, 30.f, -30.f, 1.f, 30.f, fire);*/
 
     HDR::Framebuffer()._initMSAA(window.getBufferWidth(), window.getBufferHeight());
-    //hdrBuffer._init(bufferWidth, bufferHeight);
 
     setGlobalPBRUniforms(forwardShader);
     //setGlobalPBRUniforms(deferredShader);

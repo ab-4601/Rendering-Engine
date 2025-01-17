@@ -1,8 +1,7 @@
-#include "../../headers/Engine Core/MouseSelector.h"
+#include "../../../headers/Engine Core/Editor/MouseSelector.h"
 
 MouseSelector::MouseSelector(int windowWidth, int windowHeight) {
 	pixelInfo.init(windowWidth, windowHeight);
-	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / windowHeight, ::near_plane, ::far_plane);
 }
 
 void MouseSelector::pickingPhase(glm::ivec4 viewportDimensions, const Window& window, uint32_t framebuffer) {
@@ -12,7 +11,6 @@ void MouseSelector::pickingPhase(glm::ivec4 viewportDimensions, const Window& wi
 	glViewport(0, 0, window.getBufferWidth(), window.getBufferHeight());
 
 	shader.useShader();
-	shader.setMat4("projectionMatrix", projectionMatrix);
 
 	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
 		shader.setUint("objectIndex", Mesh::meshList[i]->getObjectID() + 1);

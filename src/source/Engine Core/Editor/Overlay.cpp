@@ -16,7 +16,7 @@ void Overlay::_init(const Window& window) {
     IM_ASSERT(mainfont != NULL);
 
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    //io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     style = &ImGui::GetStyle();
     style->WindowBorderSize = 0.f;

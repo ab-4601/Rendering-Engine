@@ -32,7 +32,7 @@ private:
     int bufferWidth{ 0 }, bufferHeight{ 0 };
 
     Quad quad;
-    Window window{ 1600, 900 };
+    Window window{ };
     Camera camera{ {-300, 500, 0}, window.getBufferWidth(), window.getBufferHeight() };
     Skybox skybox{ window.getBufferWidth(), window.getBufferHeight() };
     DirectionalLight skylight{ 0.1f, 0.5f, { 4000.f, 4000.f, 0.f }, { 1.f, 1.f, 1.f } };

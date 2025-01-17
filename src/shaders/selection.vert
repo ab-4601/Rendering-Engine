@@ -3,7 +3,6 @@
 layout (location = 0) in vec3 aPos;
 
 uniform mat4 model;
-uniform mat4 projectionMatrix;
 
 layout (std140, binding = 0) uniform CameraData {
 	mat4 projection;
@@ -12,5 +11,5 @@ layout (std140, binding = 0) uniform CameraData {
 };
 
 void main() {
-	gl_Position = projectionMatrix * view * model * vec4(aPos, 1.f);
+	gl_Position = projection * view * model * vec4(aPos, 1.f);
 }

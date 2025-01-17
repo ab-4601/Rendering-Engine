@@ -1,16 +1,14 @@
 #ifndef _MOUSE_SELECTOR_H_
 #define _MOUSE_SELECTOR_H_
 
-#include "../Engine Core/Window.h"
-#include "../Engine Core/Mesh/Model.h"
+#include "../../Engine Core/Window.h"
+#include "../../Engine Core/Mesh/Model.h"
 #include "SelectionTexture.h"
 
 class MouseSelector {
 private:
 	Shader shader{ "src/shaders/selection.vert", "src/shaders/selection.frag" };
 	SelectionTexture pixelInfo;
-
-	glm::mat4 projectionMatrix{ 1.f };
 
 public:
 	MouseSelector(int windowWidth, int windowHeight);
@@ -29,7 +27,6 @@ public:
 			return;
 		}
 
-		projectionMatrix = glm::perspective(glm::radians(45.f), (float)width / height, ::near_plane, ::far_plane);
 		pixelInfo.resize(width, height);
 	}
 	void pickingPhase(glm::ivec4 viewportDimensions, const Window& window, uint32_t framebuffer = 0);

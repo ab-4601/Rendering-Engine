@@ -11,7 +11,7 @@
 #include "../Window.h"
 #include "../HDR.h"
 #include "../Post Processing/PostProcessMaster.h"
-#include "../MouseSelector.h"
+#include "MouseSelector.h"
 
 class Overlay {
 private:
