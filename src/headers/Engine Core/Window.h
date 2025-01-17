@@ -15,10 +15,10 @@ private:
 	int bufferWidth, bufferHeight;
 
 	double viewportX, viewportY;
-	GLfloat lastX, lastY, XChange, YChange;
+	float lastX, lastY, XChange, YChange;
 	bool mouseFirstMoved;
 
-	GLfloat scrollChange;
+	float scrollChange;
 
 	bool keys[1024];
 	bool LMBPressed;
@@ -38,12 +38,17 @@ private:
 		glfwSetCursorPosCallback(window, setMousePosition);
 		glfwSetScrollCallback(window, setMouseScroll);
 		glfwSetMouseButtonCallback(window, getMouseButton);
-		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 		glfwSetWindowFocusCallback(window, windowFocusCallback);
+		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 		glfwSetWindowRefreshCallback(window, windowRefreshCallback);
 	}
 
 public:
+	const char* vendor{ nullptr };
+	const char* renderer{ nullptr };
+	const char* version{ nullptr };
+	const char* glslVersion{ nullptr };
+
 	Window(int windowWidth = 0, int windowHeight = 0);
 
 	// Setup window
@@ -70,7 +75,7 @@ public:
 	bool getLMBPressed() const { return LMBPressed; }
 	bool getRMBPressed() const { return RMBPressed; }
 
-	glm::vec2 getViewportCoord() const { return glm::vec2(viewportX, viewportY); }
+	glm::vec2 MouseCoordinates() const { return glm::vec2(viewportX, viewportY); }
 
 	float getXChange() {
 		float delta = XChange;

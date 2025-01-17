@@ -1,5 +1,8 @@
 #include "../../../headers/Engine Core/Mesh/Mesh.h"
 
+uint32_t Mesh::meshCount = 0;
+std::vector<Mesh*> Mesh::meshList{};
+
 Mesh::Mesh(GLenum windingOrder) : windingOrder{ windingOrder } {
 	objectID = meshCount++;
 	meshList.push_back(this);

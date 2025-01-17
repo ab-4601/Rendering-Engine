@@ -94,7 +94,7 @@ bool BloomRenderer::_init(int windowWidth, int windowHeight)
 {
 	if (isInit) return true;
 
-	srcViewportSize = glm::ivec2(windowWidth, windowHeight);
+	srcViewportSize = glm::ivec4(0, 0, windowWidth, windowHeight);
 	srcViewportSizeFLT = glm::vec2((float)windowWidth, (float)windowHeight);
 
 	const uint32_t iterations = 6;
@@ -118,15 +118,15 @@ void BloomRenderer::renderBloomTexture(uint32_t srcTexture, float filterRadius, 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, currFramebuffer);
 
-	glViewport(0, 0, srcViewportSize.x, srcViewportSize.y);
+	glViewport(srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w);
 }
 
 void BloomRenderer::renderBloomTextureMSAA(float filterRadius, uint32_t currFramebuffer) {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, currFramebuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
 	glBlitFramebuffer(
-		0, 0, srcViewportSize.x, srcViewportSize.y,
-		0, 0, srcViewportSize.x, srcViewportSize.y,
+		srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w,
+		srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w,
 		GL_COLOR_BUFFER_BIT, GL_NEAREST
 	);
 
@@ -137,5 +137,5 @@ void BloomRenderer::renderBloomTextureMSAA(float filterRadius, uint32_t currFram
 
 	glBindFramebuffer(GL_FRAMEBUFFER, currFramebuffer);
 
-	glViewport(0, 0, srcViewportSize.x, srcViewportSize.y);
+	glViewport(srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w);
 }

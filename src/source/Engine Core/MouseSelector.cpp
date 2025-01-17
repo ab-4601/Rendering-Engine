@@ -2,35 +2,40 @@
 
 MouseSelector::MouseSelector(int windowWidth, int windowHeight) {
 	pixelInfo.init(windowWidth, windowHeight);
+	projectionMatrix = glm::perspective(glm::radians(45.f), (float)windowWidth / windowHeight, ::near_plane, ::far_plane);
 }
 
-void MouseSelector::pickingPhase(const std::vector<Mesh*>& meshes, uint32_t framebuffer)
-{
+void MouseSelector::pickingPhase(glm::ivec4 viewportDimensions, const Window& window, uint32_t framebuffer) {
 	pixelInfo.enableWriting();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glViewport(0, 0, window.getBufferWidth(), window.getBufferHeight());
+
 	shader.useShader();
+	shader.setMat4("projectionMatrix", projectionMatrix);
 
-	for (size_t i = 0; i < meshes.size(); i++) {
-		shader.setUint("objectIndex", meshes[i]->getObjectID() + 1);
+	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
+		shader.setUint("objectIndex", Mesh::meshList[i]->getObjectID() + 1);
 		shader.setUint("drawIndex", static_cast<uint32_t>(i));
-		shader.setMat4("model", meshes[i]->getModelMatrix());
+		shader.setMat4("model", Mesh::meshList[i]->getModelMatrix());
 
-		meshes[i]->drawMesh(GL_TRIANGLES);
+		Mesh::meshList[i]->drawMesh(GL_TRIANGLES);
 	}
 
 	shader.endShader();
 
 	pixelInfo.disableWriting(framebuffer);
+
+	glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
 }
 
 int MouseSelector::mouseSelectionResult(int windowHeight, int x, int y) {
 	int clickedObjectID = -1;
 
-	SelectionTexture::PixelInfo pixel = pixelInfo.readPixel(x, windowHeight - y - 1);
+	PixelInfo pixel = pixelInfo.readPixel(x, windowHeight - y - 1);
 
 	if (pixel.objectID != 0) {
-		clickedObjectID = pixel.objectID - 1;
+		clickedObjectID = (int)pixel.objectID - 1;
 
 		return clickedObjectID;
 	}

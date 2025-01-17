@@ -101,7 +101,7 @@ void SSAO::_init(int windowWidth, int windowHeight) {
 	}
 }
 
-void SSAO::calcSSAO(uint32_t gPosition, uint32_t gNormal, uint32_t currFramebuffer) {
+void SSAO::calcSSAO(uint32_t currFramebuffer) {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -120,10 +120,10 @@ void SSAO::calcSSAO(uint32_t gPosition, uint32_t gNormal, uint32_t currFramebuff
 	}
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gPosition);
+	glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().positionBuffer());
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, gNormal);
+	glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().normalBuffer());
 
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, noiseTexture);

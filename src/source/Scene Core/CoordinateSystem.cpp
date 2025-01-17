@@ -34,7 +34,7 @@ void CoordinateSystem::createCoordinateSystem() {
     axes.push_back(ZNegative);
 }
 
-void CoordinateSystem::drawCoordinateSystem(int bufferWidth, int bufferHeight, const Camera& camera)
+void CoordinateSystem::drawCoordinateSystem(glm::ivec4 viewportDimensions, const Camera& camera)
 {
     shader.useShader();
 
@@ -58,7 +58,7 @@ void CoordinateSystem::drawCoordinateSystem(int bufferWidth, int bufferHeight, c
 
     shader.setMat4("model", model);
 
-    glViewport(bufferWidth / 50, bufferHeight / 50, bufferWidth / 12, bufferHeight / 12);
+    glViewport(viewportDimensions.z / 50, viewportDimensions.w / 50, viewportDimensions.z / 12, viewportDimensions.w / 12);
 
     glDisable(GL_DEPTH_TEST);
     glLineWidth(3.f);
@@ -68,7 +68,7 @@ void CoordinateSystem::drawCoordinateSystem(int bufferWidth, int bufferHeight, c
     }
     glEnable(GL_DEPTH_TEST);
 
-    glViewport(0, 0, bufferWidth, bufferHeight);
+    glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
 
     glLineWidth((GLfloat)1.f);
 

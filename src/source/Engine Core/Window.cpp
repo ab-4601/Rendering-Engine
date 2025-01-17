@@ -3,8 +3,8 @@
 Window::Window(int windowWidth, int windowHeight)
     : window{ nullptr }, windowWidth{ windowWidth }, windowHeight{ windowHeight }, bufferWidth{ 0 }, bufferHeight{ 0 },
     lastX{ 0.f }, lastY{ 0.f }, XChange{ 0.f }, YChange{ 0.f }, mouseFirstMoved{ true }, scrollChange{ 0.f },
-    LMBPressed{ false }, RMBPressed{ false }, viewportX{ 0 }, viewportY{ 0 } {
-
+    LMBPressed{ false }, RMBPressed{ false }, isWindowFocused{ true }, viewportX { 0 }, viewportY{ 0 } 
+{
     for (int i = 0; i < 1024; i++)
         keys[i] = false;
 
@@ -79,22 +79,20 @@ void Window::getMouseButton(GLFWwindow* window, int button, int action, int mods
         currWindow->setRMBPressed(false);
 }
 
+void Window::windowFocusCallback(GLFWwindow* window, int focused) {
+    Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+    currWindow->isWindowFocused = (bool)focused;
+}
+
 void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     currWindow->bufferWidth = width;
     currWindow->bufferHeight = height;
 
-    //glfwGetFramebufferSize(currWindow->window, &currWindow->bufferWidth, &currWindow->bufferHeight);
     glfwGetWindowSize(currWindow->window, &currWindow->windowWidth, &currWindow->windowHeight);
-
-    glViewport(0, 0, currWindow->bufferWidth, currWindow->bufferHeight);
-}
-
-void Window::windowFocusCallback(GLFWwindow* window, int focused) {
-    Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-    currWindow->isWindowFocused = (bool)focused;
+    //glViewport(0, 0, currWindow->bufferWidth, currWindow->bufferHeight);
 }
 
 void Window::windowRefreshCallback(GLFWwindow* window) {
@@ -117,28 +115,29 @@ void Window::setupWindow() {
 
     // Core profile = no backwards compatibility
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, ::samples);
+    //glfwWindowHint(GLFW_SAMPLES, ::samples);
+
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 
     // Allow forward compatibility
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     if (windowWidth == 0 && windowHeight == 0) {
-        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-
         windowWidth = mode->width;
         windowHeight = mode->height;
 
-        window = glfwCreateWindow(mode->width, mode->height, "Main window", glfwGetPrimaryMonitor(), NULL);
+        window = glfwCreateWindow(mode->width, mode->height, "Custom Engine", monitor, NULL);
     }
     else
-        window = glfwCreateWindow(windowWidth, windowHeight, "Main window", NULL, NULL);
+        window = glfwCreateWindow(windowWidth, windowHeight, "Custom Engine", NULL, NULL);
 
     if (!window) {
         std::cerr << "GLFW Window creation failed" << std::endl;
@@ -164,6 +163,11 @@ void Window::setupWindow() {
         glfwTerminate();
         exit(1);
     }
+
+    vendor = (const char*)glGetString(GL_VENDOR);
+    renderer = (const char*)glGetString(GL_RENDERER);
+    version = (const char*)glGetString(GL_VERSION);
+    glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);

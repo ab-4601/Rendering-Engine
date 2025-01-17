@@ -58,7 +58,7 @@ void HDR::_init(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void HDR::_initMSAA(int width, int height) {
+void HDR::_initMSAA(int width, int height, int samples) {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -67,7 +67,7 @@ void HDR::_initMSAA(int width, int height) {
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorBuffer);
 
 	glTexImage2DMultisample(
-		GL_TEXTURE_2D_MULTISAMPLE, ::samples, GL_RGBA16F, width, height, GL_TRUE
+		GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA16F, width, height, GL_TRUE
 	);
 
 	glFramebufferTexture2D(
@@ -76,7 +76,7 @@ void HDR::_initMSAA(int width, int height) {
 
 	glGenRenderbuffers(1, &renderBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, ::samples, GL_DEPTH24_STENCIL8, width, height);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
 
 	if (!checkFramebufferStatus()) {

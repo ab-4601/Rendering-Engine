@@ -4,13 +4,14 @@
 #include "BloomRenderer.h"
 #include "../../Core Includes/GL_Core.h"
 #include "../Mesh/Geometry/Quad.h"
+#include "../HDR.h"
 
 class PostProcessMaster {
 private:
-	uint32_t FBO{ 0 }, colorBuffer{ 0 };
+	uint32_t FBO{ 0 }, RBO{ 0 }, colorBuffer{ 0 };
 	uint32_t intermediateFBO{ 0 }, screenBuffer{ 0 };
 
-	glm::ivec2 screenDimensions{ 0 };
+	glm::ivec4 screenDimensions{ 0 };
 
 	uint32_t edgeFBO = 0, blendFBO = 0;
 	uint32_t edgeColorBuffer = 0, blendColorBuffer = 0;
@@ -33,30 +34,46 @@ private:
 public:
 	PostProcessMaster(int windowWidth, int windowHeight);
 
-	uint32_t getColorBuffer() const { return colorBuffer; }
-
-	void resize(int width, int height, bool isMSAA = false) {
-		clearBuffers();
-
-		screenDimensions.x = width;
-		screenDimensions.y = height;
-
-		bloom.resize(width, height);
-		_init(width, height);
-
-		if(isMSAA)
-			_initIntermediateFBO(width, height);
+	PostProcessMaster& operator=(const PostProcessMaster&) = delete;
+	static PostProcessMaster& Framebuffer() {
+		static PostProcessMaster PostProcess{ 800, 600 };
+		return PostProcess; 
 	}
 
-	void postProcessingPass(uint32_t hdrBuffer, bool applyBloom, float knee, float filterRadius, float exposure);
-	void postProcessingPassMSAA(uint32_t hdrFBO, bool applyBloom, float knee, float filterRadius, float exposure);
+	uint32_t ColorbufferID() const { return colorBuffer; }
+	uint32_t FramebufferID() const { return FBO; }
+
+	void enableWriting() const { 
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
+
+	void resize(glm::ivec4 viewportDimensions, bool isMSAA = false) {
+		if (viewportDimensions.z <= 0 || viewportDimensions.w <= 0) {
+			std::cerr << "Invalid framebuffer dimensions" << std::endl;
+			return;
+		}
+
+		clearBuffers();
+
+		screenDimensions = viewportDimensions;
+
+		bloom.resize(viewportDimensions);
+		_init(viewportDimensions.z, viewportDimensions.w);
+
+		if(isMSAA)
+			_initIntermediateFBO(viewportDimensions.z, viewportDimensions.w);
+	}
+
+	void postProcessingPass(bool applyBloom, float knee, float filterRadius, float exposure);
+	void postProcessingPassMSAA(bool applyBloom, float knee, float filterRadius, float exposure);
 
 	void blitToDefaultFramebuffer() const {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		glBlitFramebuffer(
-			0, 0, screenDimensions.x, screenDimensions.y,
-			0, 0, screenDimensions.x, screenDimensions.y,
+			screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
+			screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
 			GL_COLOR_BUFFER_BIT, GL_NEAREST
 		);
 

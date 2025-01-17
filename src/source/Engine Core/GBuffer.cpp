@@ -64,9 +64,7 @@ void GBuffer::_init(int windowWidth, int windowHeight) {
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 }
 
-void GBuffer::updateBuffer(Shader& outlineShader, int meshId, const std::vector<Mesh*>& meshes,
-	const std::vector<Model*>& models, uint32_t currFramebuffer)
-{
+void GBuffer::updateBuffer(Shader& outlineShader, int meshId, uint32_t currFramebuffer) {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glDrawBuffers(4, colorAttachments);
 
@@ -75,16 +73,16 @@ void GBuffer::updateBuffer(Shader& outlineShader, int meshId, const std::vector<
 	shader.useShader();
 	shader.setUint("drawWireframe", drawWireframe);
 
-	if (meshId < meshes.size() && meshId != -1)
-		meshes[meshId]->renderMeshWithOutline(shader, outlineShader, GL_TRIANGLES);
+	if (meshId < Mesh::meshList.size() && meshId != -1)
+		Mesh::meshList[meshId]->renderMeshWithOutline(shader, outlineShader, GL_TRIANGLES);
 
-	for (size_t i = 0; i < meshes.size(); i++) {
+	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
 		if (i != meshId)
-			meshes[i]->renderMesh(shader, GL_TRIANGLES);
+			Mesh::meshList[i]->renderMesh(shader, GL_TRIANGLES);
 	}
 
-	for (size_t i = 0; i < models.size(); i++)
-		models[i]->renderModel(shader, GL_TRIANGLES);
+	for (size_t i = 0; i < Model::modelList.size(); i++)
+		Model::modelList[i]->renderModel(shader, GL_TRIANGLES);
 
 	shader.endShader();
 

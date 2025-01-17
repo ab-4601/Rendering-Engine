@@ -25,7 +25,7 @@ bool BloomFBO::_init(int windowWidth, int windowHeight, uint32_t iterations) {
 		glGenTextures(1, &mip.texture);
 		glBindTexture(GL_TEXTURE_2D, mip.texture);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, (int)mipSize.x, (int)mipSize.y, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R11F_G11F_B10F, mipIntSize.x, mipIntSize.y, 0, GL_RGB, GL_FLOAT, NULL);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -56,7 +56,7 @@ bool BloomFBO::_init(int windowWidth, int windowHeight, uint32_t iterations) {
 void BloomFBO::resize(int width, int height) {
 	isInit = false;
 	clearBuffers();
-	_init(width, height, this->iterations);
+	_init(width, height, iterations);
 }
 
 void BloomFBO::clearBuffers() {

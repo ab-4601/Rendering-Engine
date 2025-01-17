@@ -143,11 +143,10 @@ void CascadedShadows::setComputeUniforms() {
 	computeShader.endShader();
 }
 
-void CascadedShadows::calculateShadows(int windowWidth, int windowHeight, const std::vector<Mesh*>& meshes,
-	const std::vector<Model*>& models, const glm::vec3& lightPosition, uint32_t currFramebuffer)
-{
+void CascadedShadows::calculateShadows(glm::ivec4 viewportDimensions, const glm::vec3& lightPosition, uint32_t currFramebuffer) {
 	computeShader.useShader();
 	computeShader.setVec3("lightDirection", lightPosition);
+	computeShader.setFloat("aspect", (float)viewportDimensions.z / viewportDimensions.w);
 
 	computeShader.dispatchComputeShader(1, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -165,18 +164,18 @@ void CascadedShadows::calculateShadows(int windowWidth, int windowHeight, const 
 	glEnable(GL_DEPTH_CLAMP);
 	glCullFace(GL_FRONT);
 
-	for (size_t i = 0; i < meshes.size(); i++) {
-		glFrontFace(meshes[i]->getWindingOrder());
-		shader.setMat4("model", meshes[i]->getModelMatrix());
-		shader.setUint("useDiffuseMap", meshes[i]->getDiffuseMapBool());
-		meshes[i]->drawMesh(GL_TRIANGLES);
+	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
+		glFrontFace(Mesh::meshList[i]->getWindingOrder());
+		shader.setMat4("model", Mesh::meshList[i]->getModelMatrix());
+		shader.setUint("useDiffuseMap", Mesh::meshList[i]->getDiffuseMapBool());
+		Mesh::meshList[i]->drawMesh(GL_TRIANGLES);
 	}
 
-	for (size_t i = 0; i < models.size(); i++) {
-		glFrontFace(models[i]->getWindingOrder());
-		shader.setMat4("model", models[i]->getModelMatrix());
-		shader.setUint("useDiffuseMap", models[i]->getDiffuseMapBool());
-		models[i]->drawModel(GL_TRIANGLES);
+	for (size_t i = 0; i < Model::modelList.size(); i++) {
+		glFrontFace(Model::modelList[i]->getWindingOrder());
+		shader.setMat4("model", Model::modelList[i]->getModelMatrix());
+		shader.setUint("useDiffuseMap", Model::modelList[i]->getDiffuseMapBool());
+		Model::modelList[i]->drawModel(GL_TRIANGLES);
 	}
 
 	glCullFace(GL_BACK);
@@ -186,7 +185,7 @@ void CascadedShadows::calculateShadows(int windowWidth, int windowHeight, const 
 
 	this->shader.endShader();
 
-	glViewport(0, 0, windowWidth, windowHeight);
+	glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
 	glBindFramebuffer(GL_FRAMEBUFFER, currFramebuffer);
 }
 

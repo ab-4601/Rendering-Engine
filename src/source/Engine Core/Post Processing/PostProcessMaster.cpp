@@ -3,7 +3,7 @@
 PostProcessMaster::PostProcessMaster(int windowWidth, int windowHeight) {
 	bloom._init(windowWidth, windowHeight);
 
-	screenDimensions = glm::ivec2(windowWidth, windowHeight);
+	screenDimensions = glm::ivec4(0, 0, windowWidth, windowHeight);
 	quad.createQuad();
 
 	_init(windowWidth, windowHeight);
@@ -13,9 +13,10 @@ PostProcessMaster::PostProcessMaster(int windowWidth, int windowHeight) {
 void PostProcessMaster::clearBuffers() {
 	if (FBO != 0) {
 		glDeleteFramebuffers(1, &FBO);
+		glDeleteRenderbuffers(1, &RBO);
 		glDeleteTextures(1, &colorBuffer);
 
-		FBO = 0;
+		FBO = 0; RBO = 0;
 		colorBuffer = 0;
 	}
 
@@ -52,6 +53,11 @@ void PostProcessMaster::_init(int width, int height) {
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
 
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
 	uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
 	if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -74,6 +80,8 @@ void PostProcessMaster::_initIntermediateFBO(int width, int height) {
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenBuffer, 0);
 
@@ -141,7 +149,7 @@ void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture, int width, int h
 	edgeShader.useShader();
 
 	edgeShader.setInt("screenTexture", 0);
-	edgeShader.setVec2("screenResolution", screenDimensions);
+	edgeShader.setVec2("screenResolution", glm::ivec2(screenDimensions.z, screenDimensions.w));
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, screenTexture);
@@ -167,23 +175,23 @@ void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture, int width, int h
 	blendShader.endShader();
 }
 
-void PostProcessMaster::postProcessingPass(uint32_t hdrBuffer, bool applyBloom, float knee, float filterRadius, float exposure) {
+void PostProcessMaster::postProcessingPass(bool applyBloom, float knee, float filterRadius, float exposure) {
 	if (applyBloom) {
 		bloom.setKnee(knee);
-		bloom.renderBloomTexture(hdrBuffer, filterRadius, 0);
+		bloom.renderBloomTexture(HDR::Framebuffer().ColorbufferID(), filterRadius, 0);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	shader.useShader();
 
-	shader.setiVec2("screenResolution", screenDimensions);
+	shader.setiVec2("screenResolution", glm::ivec2(screenDimensions.z, screenDimensions.w));
 	shader.setFloat("exposure", exposure);
 	shader.setUint("enableBloom", applyBloom);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, hdrBuffer);
+	glBindTexture(GL_TEXTURE_2D, HDR::Framebuffer().ColorbufferID());
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, bloom.bloomTexture());
@@ -200,13 +208,13 @@ void PostProcessMaster::postProcessingPass(uint32_t hdrBuffer, bool applyBloom, 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PostProcessMaster::postProcessingPassMSAA(uint32_t hdrFBO, bool applyBloom, float knee, float filterRadius, float exposure) {
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, hdrFBO);
+void PostProcessMaster::postProcessingPassMSAA(bool applyBloom, float knee, float filterRadius, float exposure) {
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, HDR::Framebuffer().FramebufferID());
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
 	glBlitFramebuffer(
-		0, 0, screenDimensions.x, screenDimensions.y,
-		0, 0, screenDimensions.x, screenDimensions.y,
-		GL_COLOR_BUFFER_BIT, GL_LINEAR
+		screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
+		screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
+		GL_COLOR_BUFFER_BIT, GL_NEAREST
 	);
 
 	if (applyBloom) {
@@ -215,7 +223,7 @@ void PostProcessMaster::postProcessingPassMSAA(uint32_t hdrFBO, bool applyBloom,
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	shader.useShader();
 

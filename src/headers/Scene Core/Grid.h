@@ -24,6 +24,12 @@ private:
 public:
 	Grid();
 
+	Grid& operator=(const Grid&) = delete;
+	static Grid& EditorGrid() {
+		static Grid grid;
+		return grid;
+	}
+
 	void renderGrid();
 
 	~Grid();

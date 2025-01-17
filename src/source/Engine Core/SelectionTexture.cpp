@@ -49,7 +49,7 @@ void SelectionTexture::clearBuffers() {
 	}
 }
 
-SelectionTexture::PixelInfo SelectionTexture::readPixel(int x, int y) const {
+PixelInfo SelectionTexture::readPixel(int x, int y) const {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 

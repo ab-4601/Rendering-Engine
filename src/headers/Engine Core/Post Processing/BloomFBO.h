@@ -26,7 +26,7 @@ public:
 	BloomFBO() = default;
 
 	void resize(int width, int height);
-	bool _init(int windowWidth, int windowHeight, uint32_t iterations = 6);
+	bool _init(int windowWidth, int windowHeight, uint32_t iterations = 5);
 
 	const std::vector<BloomMip>& mipChain() const {
 		return mMipChain;

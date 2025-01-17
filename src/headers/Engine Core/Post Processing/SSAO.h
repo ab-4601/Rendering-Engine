@@ -2,6 +2,7 @@
 #define _SSAO_H_
 
 #include "../../Engine Core/Shader.h"
+#include "../../Engine Core/GBuffer.h"
 #include "../../Engine Core/Mesh/Geometry/Quad.h"
 
 class SSAO {
@@ -53,7 +54,18 @@ public:
 
 	uint32_t occlusionBuffer() const { return this->colorBufferBlur; }
 
+	SSAO& operator=(const SSAO&) = delete;
+	static SSAO& Framebuffer() {
+		static SSAO buffer{ 800, 600 };
+		return buffer;
+	}
+
 	void resize(int width, int height) {
+		if (width <= 0 || height <= 0) {
+			std::cerr << "Invalid framebuffer dimensions" << std::endl;
+			return;
+		}
+
 		scrResolution = glm::vec2((float)width, (float)height);
 
 		clearBuffers();
@@ -64,7 +76,7 @@ public:
 	void setOcclusionPower(float power) { this->occlusionPower = power; }
 
 	void _init(int windowWidth, int windowHeight);
-	void calcSSAO(uint32_t gPosition, uint32_t gNormal, uint32_t currFramebuffer = 0);
+	void calcSSAO(uint32_t currFramebuffer = 0);
 
 	~SSAO() {
 		clearBuffers();

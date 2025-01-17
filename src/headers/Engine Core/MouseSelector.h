@@ -10,11 +10,29 @@ private:
 	Shader shader{ "src/shaders/selection.vert", "src/shaders/selection.frag" };
 	SelectionTexture pixelInfo;
 
+	glm::mat4 projectionMatrix{ 1.f };
+
 public:
 	MouseSelector(int windowWidth, int windowHeight);
 
-	void resize(int width, int height) { pixelInfo.resize(width, height); }
-	void pickingPhase(const std::vector<Mesh*>& meshes, uint32_t framebuffer = 0);
+	MouseSelector& operator=(const MouseSelector&) = delete;
+	static MouseSelector& EntitySelection() {
+		static MouseSelector EntitySelector{ 800, 600 };
+		return EntitySelector;
+	}
+	
+	uint32_t selectionTexture() const { return pixelInfo.getSelectionColorBuffer(); }
+
+	void resize(int width, int height) {
+		if (width <= 0 || height <= 0) {
+			std::cerr << "Invalid framebuffer dimensions" << std::endl;
+			return;
+		}
+
+		projectionMatrix = glm::perspective(glm::radians(45.f), (float)width / height, ::near_plane, ::far_plane);
+		pixelInfo.resize(width, height);
+	}
+	void pickingPhase(glm::ivec4 viewportDimensions, const Window& window, uint32_t framebuffer = 0);
 	int mouseSelectionResult(int windowHeight, int x, int y);
 
 	~MouseSelector() = default;

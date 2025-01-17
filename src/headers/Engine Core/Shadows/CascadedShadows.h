@@ -48,8 +48,7 @@ public:
 	const float* const cascadePlanes() const { return this->cascadeSplits; }
 	glm::vec3 getNoiseTextureSize() const { return this->noiseTextureSize; }
 
-	void calculateShadows(int windowWidth, int windowHeight, const std::vector<Mesh*>& meshes,
-		const std::vector<Model*>& models, const glm::vec3& lightPosition, uint32_t currFramebuffer = 0);
+	void calculateShadows(glm::ivec4 viewportDimensions, const glm::vec3& lightPosition, uint32_t currFramebuffer = 0);
 
 	~CascadedShadows();
 };

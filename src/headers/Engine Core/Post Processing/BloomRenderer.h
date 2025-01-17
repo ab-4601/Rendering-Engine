@@ -13,7 +13,7 @@ private:
 	uint32_t intermediateFBO{ 0 }, screenBuffer{ 0 };
 	float knee{ 1.f };
 
-	glm::ivec2 srcViewportSize{ 0 };
+	glm::ivec4 srcViewportSize{ 0 };
 	glm::vec2 srcViewportSizeFLT{ 0.f };
 
 	Shader upsampleShader{ "src/shaders/bloom.vert", "src/shaders/bloom_upsample.frag" };
@@ -29,12 +29,17 @@ private:
 public:
 	BloomRenderer();
 
-	void resize(int width, int height) {
-		srcViewportSize = glm::ivec2(width, height);
-		srcViewportSizeFLT = glm::vec2((float)width, (float)height);
+	void resize(glm::ivec4 viewportDimensions) {
+		if (viewportDimensions.z <= 0 || viewportDimensions.w <= 0) {
+			std::cerr << "Invalid framebuffer dimensions" << std::endl;
+			return;
+		}
+
+		srcViewportSize = viewportDimensions;
+		srcViewportSizeFLT = glm::vec2((float)viewportDimensions.z, (float)viewportDimensions.w);
 
 		isInit = false;
-		mFBO.resize(width, height);
+		mFBO.resize(viewportDimensions.z, viewportDimensions.w);
 	}
 
 	void setKnee(float knee) { this->knee = (knee < 0.f) ? 0.f : knee; }

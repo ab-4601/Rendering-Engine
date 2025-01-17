@@ -4,6 +4,12 @@
 #include <iostream>
 #include "../Core Includes/GL_Core.h"
 
+struct PixelInfo {
+	uint32_t objectID = 0;
+	uint32_t drawID = 0;
+	uint32_t primitiveID = 0;
+};
+
 class SelectionTexture {
 private:
 	uint32_t FBO = 0;
@@ -19,18 +25,16 @@ public:
 	void init(int windowWidth, int windowHeight);
 
 	void resize(int width, int height) {
+		if (width == 0 || height == 0) return;
+
 		clearBuffers();
 		init(width, height);
 	}
 
+	uint32_t getSelectionColorBuffer() const { return selectionTexture; }
+
 	void enableWriting() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO); }
 	void disableWriting(GLuint framebuffer = 0) const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer); }
-
-	struct PixelInfo {
-		uint32_t objectID = 0;
-		uint32_t drawID = 0;
-		uint32_t primitiveID = 0;
-	};
 
 	PixelInfo readPixel(int x, int y) const;
 

@@ -28,14 +28,24 @@ public:
 	uint32_t albedoBuffer() const { return gAlbedo; }
 	uint32_t metallicBuffer() const { return gMetallic; }
 
+	GBuffer& operator=(const GBuffer&) = delete;
+	static GBuffer& Framebuffer() {
+		static GBuffer buffer{ 800, 600 };
+		return buffer;
+	}
+
 	void resize(int width, int height) {
+		if (width <= 0 || height <= 0) {
+			std::cerr << "Invalid framebuffer dimensions" << std::endl;
+			return;
+		}
+
 		clearBuffers();
 		_init(width, height);
 	}
 
 	void updateWireframeBool(bool drawWireframe) { this->drawWireframe = drawWireframe; }
-	void updateBuffer(Shader& outlineShader, int meshID, const std::vector<Mesh*>& meshes,
-		const std::vector<Model*>& models, uint32_t currFramebuffer = 0);
+	void updateBuffer(Shader& outlineShader, int meshID, uint32_t currFramebuffer = 0);
 
 	~GBuffer() {
 		clearBuffers();

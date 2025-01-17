@@ -15,8 +15,14 @@ private:
 public:
 	CoordinateSystem();
 
+	CoordinateSystem& operator=(const CoordinateSystem&) = delete;
+	static CoordinateSystem& Widget() {
+		static CoordinateSystem widget;
+		return widget;
+	}
+
 	void createCoordinateSystem();
-	void drawCoordinateSystem(int bufferWidth, int bufferHeight, const Camera& camera);
+	void drawCoordinateSystem(glm::ivec4 viewportDimensions, const Camera& camera);
 
 	~CoordinateSystem();
 };

@@ -18,7 +18,7 @@ void Overlay::_init(const Window& window) {
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    ImGuiStyle* style = &ImGui::GetStyle();
+    style = &ImGui::GetStyle();
     style->WindowBorderSize = 0.f;
     style->WindowRounding = 5.f;
 
@@ -26,19 +26,21 @@ void Overlay::_init(const Window& window) {
     style->Colors[ImGuiCol_TitleBg] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TitleBgActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 0.5f);
+    style->Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
     style->Colors[ImGuiCol_FrameBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.f);
     style->Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
     style->Colors[ImGuiCol_CheckMark] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
+    style->Colors[ImGuiCol_Button] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_Header] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_HeaderActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_HeaderHovered] = style->Colors[ImGuiCol_FrameBgHovered];
     style->Colors[ImGuiCol_SliderGrab] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_Tab] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
-    style->Colors[ImGuiCol_TabUnfocused] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
+    style->Colors[ImGuiCol_TabUnfocused] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
     style->Colors[ImGuiCol_TabActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TabHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
+    style->Colors[ImGuiCol_TabSelected] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
 }
 
@@ -48,7 +50,6 @@ void Overlay::newFrame() {
 
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
-    ImGui::GetMainViewport();
 
     CreateDockingSpace();
 }
@@ -65,7 +66,7 @@ void Overlay::CreateDockingSpace() {
     windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoMove;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
 
     ImGui::Begin("Dockspace", nullptr, windowFlags);
@@ -76,44 +77,60 @@ void Overlay::CreateDockingSpace() {
     ImGui::End();
 }
 
-void Overlay::CreateSceneViewport(uint32_t textureID, const Camera& camera, Mesh* mesh) {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 2.f, 2.f });
+void Overlay::CreateSceneViewport(glm::mat4& viewportMatrix, const Window& window, Camera& camera) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
     ImGui::Begin("Scene Viewport");
 
+    float framePadding = ImGui::GetFontSize() + style->FramePadding.y * 2.f;
+
     viewportPos = ImGui::GetWindowPos();
-    ImVec2 availableSpace = ImGui::GetContentRegionAvail();
+    viewportSize = ImGui::GetContentRegionAvail();
 
-    float viewportAspect = availableSpace.x / availableSpace.y;
+    viewportPos.y += ImGui::GetWindowSize().y - viewportSize.y;
 
-    if (viewportAspect > aspectRatio) {
-        viewportSize.x = availableSpace.x;
-        viewportSize.y = availableSpace.x / aspectRatio;
+    if (viewportDimensions.z != (int)viewportSize.x || viewportDimensions.w != (int)viewportSize.y) {
+        viewportDimensions.z = (int)viewportSize.x;
+        viewportDimensions.w = (int)viewportSize.y;
+
+        glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
+
+        HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w, true);
+        PostProcessMaster::Framebuffer().resize(viewportDimensions, true);
+
+        camera.setProjectionAspect(viewportSize.x / viewportSize.y);
+
+        viewportMatrix = glm::mat4{
+            glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
+            glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
+            glm::vec4(0.f, 0.f, 1.f, 0.f),
+            glm::vec4(0.f, 0.f, 0.f, 1.f)
+        };
     }
-    else {
-        viewportSize.y = availableSpace.y;
-        viewportSize.x = availableSpace.y * aspectRatio;
+
+    ImGui::Image((intptr_t)PostProcessMaster::Framebuffer().ColorbufferID(), viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && isMouseOverWindow(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
+        mousePos = ImGui::GetMousePos();
+        mousePos.x -= viewportPos.x;
+        mousePos.y -= viewportPos.y;
+
+        if (mousePos.x > 0 || mousePos.x < viewportSize.x || mousePos.y > 0 || mousePos.y < viewportSize.y)
+        {
+            float scaleX = (float)window.getBufferWidth() / viewportSize.x;
+            float scaleY = (float)window.getBufferHeight() / viewportSize.y;
+
+            mousePos.x = mousePos.x * scaleX;
+            mousePos.y = mousePos.y * scaleY;
+
+            entityID = MouseSelector::EntitySelection().mouseSelectionResult(
+                window.getBufferHeight(), (int)mousePos.x, (int)mousePos.y
+            );
+        }
     }
 
-    ImVec2 offset{ 0.f, 0.f };
-    offset.x = (availableSpace.x - viewportSize.x) / 2.f;
-    offset.y = (availableSpace.y - viewportSize.y) / 2.f;
-
-    ImVec2 cursorPos = ImGui::GetCursorPos();
-    ImGui::SetCursorPos(ImVec2(cursorPos.x + offset.x, cursorPos.y + offset.y));
-
-    ImGui::Image((intptr_t)textureID, viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
-
-    if (mesh != nullptr) {
-        ImGuizmo::AllowAxisFlip(false);
-        ImGuizmo::SetOrthographic(false);
-        ImGuizmo::Enable(true);
-        ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-        ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
-
-        ImGuizmo::Manipulate(
-            glm::value_ptr(camera.generateViewMatrix()), glm::value_ptr(camera.getProjectionMatrix()),
-            transformOperation, ImGuizmo::WORLD, glm::value_ptr(mesh->getModelMatrix())
-        );
+    if (entityID != -1) {
+        Mesh* mesh = Mesh::meshList[entityID];
+        manipulate(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y, camera, mesh);
     }
 
     ImGui::PopStyleVar(1);
@@ -129,6 +146,29 @@ void Overlay::_updateTransformOperation(const Window& window) {
 
     else if (window.getKeyPress(GLFW_KEY_3))
         transformOperation = ImGuizmo::SCALE;
+}
+
+void Overlay::manipulate(float x, float y, float width, float height, const Camera& camera, Mesh* mesh) {
+    ImGuizmo::AllowAxisFlip(false);
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::Enable(true);
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+    ImGuizmo::SetRect(x, y, width, height);
+
+    ImGuizmo::Manipulate(
+        glm::value_ptr(camera.generateViewMatrix()), glm::value_ptr(camera.getProjectionMatrix()),
+        transformOperation, ImGuizmo::WORLD, glm::value_ptr(mesh->getModelMatrix())
+    );
+
+    colorBuffer[0] = mesh->getColor().x;
+    colorBuffer[1] = mesh->getColor().y;
+    colorBuffer[2] = mesh->getColor().z;
+
+    metallic = mesh->getMetallic();
+    roughness = mesh->getRoughness();
+    ao = mesh->getAO();
+
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->getModelMatrix()), translation, rotation, scale);
 }
 
 void Overlay::DrawVec3Control(const std::string& label, float* values, float resetValue, float columnWidth) {
@@ -216,22 +256,79 @@ void Overlay::DrawSliderFloat(const std::string& label, float* values, float min
     ImGui::PopID();
 }
 
-void Overlay::render(const Window& window, float& exposure, float& shadowRadius, float& filterRadius, float& bloomThreshold, float& ssaoRadius,
-    float& ssaoBias, float& ssaoOcclusionPower, bool& drawSkybox, bool& displayGrid, bool& displayCoordinateSystem, bool& enableBloom,
-    bool& enableWireframe, bool& enableShadows, bool& enableHDR, bool& enableSSAO, glm::vec3& dirLightLocation, Mesh* currMesh)
-{
-    ImGui::Begin("Scene Information and modifiers");
+void Overlay::DrawCombo(const std::string& label, std::vector<std::string>& options, std::vector<bool>& values, int& index) {
+    ImGui::Columns(2);
+    ImGui::SetColumnWidth(0, 150.f);
+    ImGui::Text(label.c_str());
+    ImGui::NextColumn();
+
+    if (ImGui::BeginCombo(("##" + label).c_str(), options[index].c_str())) {
+        int previousIndex = index;
+
+        for (size_t i = 0; i < options.size(); i++) {
+            if (ImGui::Selectable(options[i].c_str(), &values)) {
+                index = (int)i;
+                values[i] = !values[i];
+            }
+        }
+
+        if (previousIndex != index) {
+            HDR::Framebuffer().updateSamplesMSAA(viewportDimensions.z, viewportDimensions.w, numSamples[index]);
+        }
+
+        values[previousIndex] = false;
+
+        ImGui::EndCombo();
+    }
+
+    ImGui::Columns(1);
+}
+
+void Overlay::DrawDriverAndVendorInformation(const Window& window) const {
+    ImGui::Begin("Driver and Vendor Information");
+
+    ImGui::Text("Vendor         : %s", window.vendor);
+    ImGui::Text("Renderer       : %s", window.renderer);
+    ImGui::Text("OpenGL version : %s", window.version);
+    ImGui::Text("GLSL version   : %s", window.glslVersion);
+
+    ImGui::End();
+}
+
+void Overlay::DrawRuntimeInformation() const {
+    ImGui::Begin("Runtime");
+
+    int viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    ImGui::Text("Viewport dimensions   : (%i, %i, %i, %i)", viewport[0], viewport[1], viewport[2], viewport[3]);
+    ImGui::Text("Mouse cursor position : (%.2f, %.2f)", mousePos.x, mousePos.y);
+    ImGui::Text("Entity Index          : %i", entityID);
+    ImGui::Text("Viewport Avail Size   : (%.1f, %.1f)", viewportSize.x, viewportSize.y);
+    //ImGui::NewLine();
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
+
+    ImGui::End();
+}
+
+void Overlay::render(const Window& window, glm::vec3& dirLightLocation) {
+    DrawDriverAndVendorInformation(window);
+
+    if (runtimeInformation) DrawRuntimeInformation();
+
+    ImGui::Begin("Details Panel");
 
     if (ImGui::TreeNode("Scene")) {
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
         ImGui::Checkbox("Render Skybox", &drawSkybox);
         ImGui::Checkbox("Display Coordinate System", &displayCoordinateSystem);
         ImGui::Checkbox("Display Grid", &displayGrid);
-        ImGui::Checkbox("Wireframe", &enableWireframe);
+        ImGui::Checkbox("Wireframe", &drawWireframe);
         ImGui::Checkbox("Enable HDR", &enableHDR);
-        ImGui::Checkbox("Enable bloom", &enableBloom);
-        ImGui::Checkbox("Enable shadows", &enableShadows);
+        ImGui::Checkbox("Enable Bloom", &enableBloom);
+        ImGui::Checkbox("Enable Shadows", &enableShadows);
         ImGui::Checkbox("SSAO", &enableSSAO);
+        ImGui::Checkbox("Runtime Information", &runtimeInformation);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
         ImGui::TreePop();
     }
@@ -240,7 +337,9 @@ void Overlay::render(const Window& window, float& exposure, float& shadowRadius,
 
     if (ImGui::TreeNode("HDR")) {
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+        static int msaaSelection = 0;
         DrawDragFloat("Exposure", &exposure, 0.01f, 150.f);
+        DrawCombo("MSAA Samples", samples, selected, msaaSelection);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
         ImGui::TreePop();
     }
@@ -260,7 +359,7 @@ void Overlay::render(const Window& window, float& exposure, float& shadowRadius,
 
     if (ImGui::TreeNode("Shadows")) {
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        DrawDragFloat("PCF filter radius", &shadowRadius, 0.001f, 150.f);
+        DrawDragFloat("PCF Filter Radius", &shadowRadius, 0.001f, 150.f);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
         ImGui::TreePop();
     }
@@ -310,22 +409,19 @@ void Overlay::render(const Window& window, float& exposure, float& shadowRadius,
 
     ImGui::NewLine();
     DrawVec3Control("Directional Light", glm::value_ptr(dirLightLocation), 0.f, 150.f);
-    ImGui::NewLine();
 
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
-    //ImGui::Text("Framebuffer dimensions: (%.2f, %.2f)", (float)window.getBufferWidth(), (float)window.getBufferHeight());
     ImGui::End();
 
-    if (currMesh != nullptr) {
+    if (entityID != -1) {
         glm::mat4 model = glm::mat4(1.f);
 
         ImGuizmo::RecomposeMatrixFromComponents(translation, rotation, scale, glm::value_ptr(model));
-        currMesh->setModelMatrix(model);
+        Mesh::meshList[entityID]->setModelMatrix(model);
 
         glm::vec3 color{ colorBuffer[0], colorBuffer[1], colorBuffer[2] };
 
-        currMesh->setColor(color);
-        currMesh->setMeshMaterial(roughness, metallic, ao);
+        Mesh::meshList[entityID]->setColor(color);
+        Mesh::meshList[entityID]->setMeshMaterial(roughness, metallic, ao);
     }
 
     ImGui::Render();
@@ -336,29 +432,6 @@ void Overlay::render(const Window& window, float& exposure, float& shadowRadius,
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(window.getGlfwWindow());
     }
-}
-
-void Overlay::manipulate(int windowWidth, int windowHeight, const Camera& camera, Mesh* mesh) {
-    ImGuizmo::AllowAxisFlip(false);
-    ImGuizmo::SetOrthographic(false);
-    ImGuizmo::Enable(true);
-    ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
-    ImGuizmo::SetRect(0, 0, (float)windowWidth, (float)windowHeight);
-
-    ImGuizmo::Manipulate(
-        glm::value_ptr(camera.generateViewMatrix()), glm::value_ptr(camera.getProjectionMatrix()),
-        transformOperation, ImGuizmo::WORLD, glm::value_ptr(mesh->getModelMatrix())
-    );
-
-    colorBuffer[0] = mesh->getColor().x;
-    colorBuffer[1] = mesh->getColor().y;
-    colorBuffer[2] = mesh->getColor().z;
-
-    metallic = mesh->getMetallic();
-    roughness = mesh->getRoughness();
-    ao = mesh->getAO();
-
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->getModelMatrix()), translation, rotation, scale);
 }
 
 Overlay::~Overlay() {

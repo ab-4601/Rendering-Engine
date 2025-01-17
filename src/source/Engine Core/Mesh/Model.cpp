@@ -1,5 +1,8 @@
 #include "../../../headers/Engine Core/Mesh/Model.h"
 
+uint32_t Model::modelCount = 0;
+std::vector<Model*> Model::modelList{};
+
 Model::Model(std::string fileName, std::string texFolderPath, aiTextureType diffuseMap,
 	aiTextureType normalMap, aiTextureType metallicMap, aiTextureType emissiveMap,
 	bool isStrippedNormal, bool hasEmissiveMaterial)
