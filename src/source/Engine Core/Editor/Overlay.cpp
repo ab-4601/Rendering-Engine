@@ -310,9 +310,7 @@ void Overlay::DrawRuntimeInformation() const {
     ImGui::Text("Viewport dimensions   : (%i, %i, %i, %i)", viewport[0], viewport[1], viewport[2], viewport[3]);
     ImGui::Text("Mouse cursor position : (%.2f, %.2f)", mousePos.x, mousePos.y);
     ImGui::Text("Entity Index          : %i", entityID);
-    ImGui::Text("Viewport Avail Size   : (%.1f, %.1f)", viewportSize.x, viewportSize.y);
-    //ImGui::NewLine();
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
+    ImGui::Text("Viewport Size         : (%.1f, %.1f)", viewportSize.x, viewportSize.y);
 
     ImGui::End();
 }
