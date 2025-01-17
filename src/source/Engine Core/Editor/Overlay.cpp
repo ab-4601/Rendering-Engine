@@ -60,7 +60,7 @@ void Overlay::CreateDockingSpace() {
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
     ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::SetNextWindowBgAlpha(0.f);
+    //ImGui::SetNextWindowBgAlpha(0.f);
 
     windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
     windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoMove;
@@ -108,6 +108,12 @@ void Overlay::CreateSceneViewport(glm::mat4& viewportMatrix, const Window& windo
     }
 
     ImGui::Image((intptr_t)PostProcessMaster::Framebuffer().ColorbufferID(), viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
+    std::string text1 = "Application average: " + std::to_string(1000.f / io->Framerate) + " ms/frame";
+    std::string text2 = std::to_string(io->Framerate) + "FPS";
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    drawList->AddText(viewportPos, IM_COL32(10, 255, 255, 255), text1.c_str());
+    drawList->AddText(ImVec2(viewportPos.x, viewportPos.y + framePadding), IM_COL32(10, 255, 255, 255), text2.c_str());
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && isMouseOverWindow(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
         mousePos = ImGui::GetMousePos();
