@@ -6,6 +6,13 @@ PostProcessMaster::PostProcessMaster(int windowWidth, int windowHeight) {
 	screenDimensions = glm::ivec4(0, 0, windowWidth, windowHeight);
 	quad.createQuad();
 
+	glGenFramebuffers(1, &FBO);
+	glGenTextures(1, &colorBuffer);
+	glGenRenderbuffers(1, &RBO);
+
+	glGenFramebuffers(1, &intermediateFBO);
+	glGenTextures(1, &screenBuffer);
+
 	_init(windowWidth, windowHeight);
 	_initIntermediateFBO(windowWidth, windowHeight);
 }
@@ -40,11 +47,9 @@ void PostProcessMaster::clearBuffers() {
 	}
 }
 
-void PostProcessMaster::_init(int width, int height) {
-	glGenFramebuffers(1, &FBO);
+void PostProcessMaster::_init(int width, int height) const {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	glGenTextures(1, &colorBuffer);
 	glBindTexture(GL_TEXTURE_2D, colorBuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -53,7 +58,6 @@ void PostProcessMaster::_init(int width, int height) {
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
 
-	glGenRenderbuffers(1, &RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
@@ -69,11 +73,8 @@ void PostProcessMaster::_init(int width, int height) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void PostProcessMaster::_initIntermediateFBO(int width, int height) {
-	glGenFramebuffers(1, &intermediateFBO);
+void PostProcessMaster::_initIntermediateFBO(int width, int height) const {
 	glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO);
-
-	glGenTextures(1, &screenBuffer);
 
 	glBindTexture(GL_TEXTURE_2D, screenBuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -141,7 +142,7 @@ void PostProcessMaster::_initSMAA(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture, int width, int height) {
+void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture) {
 	// edge calculation pass
 	glBindFramebuffer(GL_FRAMEBUFFER, edgeFBO);
 	glClear(GL_COLOR_BUFFER_BIT);

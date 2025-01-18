@@ -32,7 +32,6 @@ public:
 	void updateSamplesMSAA(int width, int height, int samples) {
 		if (width <= 0 || height <= 0) return;
 
-		clearBuffers();
 		_initMSAA(width, height, samples);
 	}
 
@@ -41,8 +40,6 @@ public:
 			std::cerr << "Invalid framebuffer dimensions" << std::endl;
 			return;
 		}
-
-		clearBuffers();
 
 		if (isMSAA) 
 			_initMSAA(width, height);

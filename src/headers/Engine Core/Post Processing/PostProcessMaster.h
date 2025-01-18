@@ -24,10 +24,11 @@ private:
 	Shader edgeShader{ "src/shaders/smaa.vert", "src/shaders/smaa_edge.frag" };
 	Shader blendShader{ "src/shaders/smaa.vert", "src/shaders/smaa_blend.frag" };
 
-	void _init(int width, int height);
+	void _init(int width, int height) const;
+	void _initIntermediateFBO(int width, int height) const;
+
 	void _initSMAA(int width, int height);
-	void _initIntermediateFBO(int width, int height);
-	void calcSMAAbuffers(uint32_t screenTexture, int width, int height);
+	void calcSMAAbuffers(uint32_t screenTexture);
 
 	void clearBuffers();
 
@@ -53,8 +54,6 @@ public:
 			std::cerr << "Invalid framebuffer dimensions" << std::endl;
 			return;
 		}
-
-		clearBuffers();
 
 		screenDimensions = viewportDimensions;
 

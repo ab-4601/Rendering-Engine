@@ -18,7 +18,7 @@ private:
 	bool isInit = false;
 	std::vector<BloomMip> mMipChain{};
 
-	uint32_t iterations = 6;
+	uint32_t iterations = 5;
 
 	void clearBuffers();
 

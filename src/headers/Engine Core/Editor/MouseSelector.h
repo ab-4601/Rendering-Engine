@@ -14,9 +14,9 @@ public:
 	MouseSelector(int windowWidth, int windowHeight);
 
 	MouseSelector& operator=(const MouseSelector&) = delete;
-	static MouseSelector& EntitySelection() {
-		static MouseSelector EntitySelector{ 800, 600 };
-		return EntitySelector;
+	static MouseSelector& EntitySelector() {
+		static MouseSelector selector{ 800, 600 };
+		return selector;
 	}
 	
 	uint32_t selectionTexture() const { return pixelInfo.getSelectionColorBuffer(); }

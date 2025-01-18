@@ -37,8 +37,6 @@ bool BloomFBO::_init(int windowWidth, int windowHeight, uint32_t iterations) {
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mMipChain[0].texture, 0);
 
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
 	GLuint status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
 	if (status != GL_FRAMEBUFFER_COMPLETE) {

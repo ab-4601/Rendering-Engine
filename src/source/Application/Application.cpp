@@ -7,7 +7,7 @@ Application::Application() {
     bufferWidth = window.getBufferWidth();
     bufferHeight = window.getBufferHeight();
 
-    MouseSelector::EntitySelection().resize(bufferWidth, bufferHeight);
+    MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
 
     viewportMatrix = glm::mat4{
         glm::vec4((float)window.getBufferWidth() / 2.f, 0.f, 0.f, (float)window.getBufferWidth() / 2.f),
@@ -172,7 +172,7 @@ void Application::start() {
     terrain.setModelMatrix(model);
     terrain.setColor(glm::vec3(0.2f, 0.2f, 0.2f));*/
 
-    /*Model suntemple(
+    Model suntemple(
         "src/Content/Models/SunTemple/SunTemple.fbx",
         "src/Content/Models/SunTemple/Textures/",
         aiTextureType_DIFFUSE,
@@ -180,12 +180,12 @@ void Application::start() {
         aiTextureType_SPECULAR,
         aiTextureType_EMISSIVE,
         true, true
-    );*/
+    );
 
-    modelMatrix = glm::mat4(1.f);
+    /*modelMatrix = glm::mat4(1.f);
     modelMatrix = glm::scale(modelMatrix, glm::vec3(100.f));
 
-    /*Model isometricRoom(
+    Model isometricRoom(
         "src/Content/Models/IsometricRoom/Isometric Room v5058 p4866.fbx",
         "src/Content/Models/IsometricRoom/",
         aiTextureType_DIFFUSE,
@@ -193,14 +193,14 @@ void Application::start() {
         aiTextureType_METALNESS,
         aiTextureType_EMISSIVE,
         false, true
-    );*/
+    );
 
-    //isometricRoom->setModelMatrix(model);
+    isometricRoom.setModelMatrix(modelMatrix);*/
 
-    Model sponza(
+    /*Model sponza(
         "src/Content/Models/Sponza/Sponza.gltf",
         "src/Content/Models/Sponza/"
-    );
+    );*/
 
     CoordinateSystem::Widget().createCoordinateSystem();
 
@@ -230,7 +230,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         bufferWidth = window.getBufferWidth();
         bufferHeight = window.getBufferHeight();
 
-        MouseSelector::EntitySelection().resize(bufferWidth, bufferHeight);
+        MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
     }
 
     currTime = (float)glfwGetTime();
@@ -275,7 +275,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
             csm.calculateShadows(Overlay::Editor().getViewportDimensions(), lightDirection, currentFramebuffer);
         }
 
-        MouseSelector::EntitySelection().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
+        MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
 
         mouseCoords = window.MouseCoordinates();
 
@@ -295,7 +295,6 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         }
 
         if (Overlay::Editor().entityID < (int)Mesh::meshList.size() && Overlay::Editor().entityID != -1) {
-            Overlay::Editor()._updateTransformOperation(window);
             Mesh::meshList[Overlay::Editor().entityID]->renderMeshWithOutline(forwardShader, outlineShader);
         }
 
@@ -337,8 +336,9 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
         else
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        Overlay::Editor().CreateSceneViewport(viewportMatrix, window, camera);
-        Overlay::Editor().render(window, lightDirection);
+        Overlay::Editor().DrawSceneViewport(viewportMatrix, window, camera);
+        Overlay::Editor().DrawDetailsPanel(window, lightDirection);
+        Overlay::Editor().Render(window.getGlfwWindow());
 
         glfwSwapBuffers(window.getMainWindow());
         glClear(GL_COLOR_BUFFER_BIT);
@@ -349,6 +349,13 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
 void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
 {
+    if (window.getBufferWidth() != bufferWidth || window.getBufferHeight() != bufferHeight) {
+        bufferWidth = window.getBufferWidth();
+        bufferHeight = window.getBufferHeight();
+
+        MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
+    }
+
     currTime = (float)glfwGetTime();
     deltaTime = currTime - lastTime;
     elapsedTime += deltaTime;
@@ -383,7 +390,7 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
             csm.calculateShadows(Overlay::Editor().getViewportDimensions(), lightDirection, currentFramebuffer);
         }
 
-        MouseSelector::EntitySelection().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
+        MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
 
         mouseCoords = window.MouseCoordinates();
 
@@ -417,10 +424,6 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 
         glActiveTexture(GL_TEXTURE11);
         glBindTexture(GL_TEXTURE_2D, SSAO::Framebuffer().occlusionBuffer());
-
-        if (Overlay::Editor().entityID < (int)Mesh::meshList.size() && Overlay::Editor().entityID != -1) {
-            Overlay::Editor()._updateTransformOperation(window);
-        }
 
         quad.renderQuad();
 
@@ -464,8 +467,9 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
             );
         }
 
-        Overlay::Editor().CreateSceneViewport(viewportMatrix, window, camera);
-        Overlay::Editor().render(window, lightDirection);
+        Overlay::Editor().DrawSceneViewport(viewportMatrix, window, camera);
+        Overlay::Editor().DrawDetailsPanel(window, lightDirection);
+        Overlay::Editor().Render(window.getGlfwWindow());
 
         glfwSwapBuffers(window.getMainWindow());
         glClear(GL_COLOR_BUFFER_BIT);

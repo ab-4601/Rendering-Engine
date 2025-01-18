@@ -29,14 +29,13 @@ void Window::handleInput(GLFWwindow* window, int key, int code, int action, int 
 }
 
 void Window::setMousePosition(GLFWwindow* window, double xPos, double yPos) {
-    GLFWwindow* temp = window;
     Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     currWindow->viewportX = xPos;
     currWindow->viewportY = yPos;
 
     if (currWindow->getRMBPressed() == true) {
-        glfwSetInputMode(temp, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetInputMode(currWindow->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         if (currWindow->mouseFirstMoved) {
             currWindow->lastX = (float)xPos;
@@ -51,7 +50,7 @@ void Window::setMousePosition(GLFWwindow* window, double xPos, double yPos) {
         currWindow->lastY = (float)yPos;
     }
     else {
-        glfwSetInputMode(temp, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetInputMode(currWindow->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         currWindow->mouseFirstMoved = true;
     }
 }

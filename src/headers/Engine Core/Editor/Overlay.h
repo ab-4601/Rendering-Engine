@@ -44,6 +44,8 @@ private:
 	void DrawRuntimeInformation() const;
 	void CreateDockingSpace();
 
+	void manipulate(float x, float y, float width, float height, const Camera& camera);
+
 public:
 	Overlay() = default;
 
@@ -71,12 +73,12 @@ public:
 	int viewportHeight() const { return viewportDimensions.w; }
 	const glm::ivec4& getViewportDimensions() const { return viewportDimensions; }
 
-	void CreateSceneViewport(glm::mat4& viewportMatrix, const Window& window, Camera& camera);
+	void DrawSceneViewport(glm::mat4& viewportMatrix, const Window& window, Camera& camera);
+	void DrawDetailsPanel(const Window& window, glm::vec3& dirLightDirection);
 
 	void newFrame();
 	void _updateTransformOperation(const Window& window);
-	void render(const Window& window, glm::vec3& dirLightLocation);
-	void manipulate(float x, float y, float width, float height, const Camera& camera, Mesh* mesh);
+	void Render(GLFWwindow* window);
 
 	~Overlay();
 };

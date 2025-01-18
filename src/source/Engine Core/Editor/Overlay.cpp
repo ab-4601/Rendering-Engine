@@ -12,26 +12,32 @@ void Overlay::_init(const Window& window) {
     ImGui_ImplOpenGL3_Init("#version 460");
 
     //io->Fonts->AddFontDefault();
-    mainfont = io->Fonts->AddFontFromFileTTF("src/Content/Fonts/JetBrainsMono-SemiBold.ttf", 18.5f, NULL);
+    mainfont = io->Fonts->AddFontFromFileTTF("src/Content/Fonts/Montserrat-Regular.ttf", 17.5f, NULL);
     IM_ASSERT(mainfont != NULL);
 
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    //io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    /*io->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io->BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+    io->BackendFlags |= ImGuiBackendFlags_RendererHasViewports;*/
 
     style = &ImGui::GetStyle();
-    style->WindowBorderSize = 0.f;
-    style->WindowRounding = 5.f;
 
+    style->TabBarOverlineSize = 0.f;
+    style->WindowBorderSize = 5.f;
+    style->WindowRounding = 5.f;
+    style->TabRounding = 5.f;
+
+    style->Colors[ImGuiCol_Border] = ImVec4(0.15f, 0.15f, 0.15f, 1.f);
     style->Colors[ImGuiCol_Text] = ImVec4(1.f, 0.9f, 0.9f, 1.f);
-    style->Colors[ImGuiCol_TitleBg] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_TitleBgActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_WindowBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
-    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.08f, 0.08f, 0.08f, 1.f);
+    style->Colors[ImGuiCol_TitleBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
+    style->Colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.f);
+    style->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.15f, 0.15f, 0.15f, 1.f);
+    style->Colors[ImGuiCol_WindowBg] = ImVec4(0.05f, 0.05f, 0.05f, 1.f);
+    style->Colors[ImGuiCol_FrameBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.f);
     style->Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
     style->Colors[ImGuiCol_CheckMark] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_Button] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_Header] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
+    style->Colors[ImGuiCol_Header] = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
     style->Colors[ImGuiCol_HeaderActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_HeaderHovered] = style->Colors[ImGuiCol_FrameBgHovered];
     style->Colors[ImGuiCol_SliderGrab] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
@@ -41,7 +47,8 @@ void Overlay::_init(const Window& window) {
     style->Colors[ImGuiCol_TabActive] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
     style->Colors[ImGuiCol_TabHovered] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
     style->Colors[ImGuiCol_TabSelected] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
-    style->Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.9f, 0.41f, 0.f, 1.f);
+    style->Colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.1f, 0.1f, 0.1f, 1.f);
+    style->Colors[ImGuiCol_Separator] = ImVec4(0.4f, 0.4f, 0.4f, 1.f);
 }
 
 void Overlay::newFrame() {
@@ -49,9 +56,18 @@ void Overlay::newFrame() {
     ImGui_ImplGlfw_NewFrame();
 
     ImGui::NewFrame();
-    ImGuizmo::BeginFrame();
-
     CreateDockingSpace();
+}
+
+void Overlay::Render(GLFWwindow* window) {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(window);
+    }
 }
 
 void Overlay::CreateDockingSpace() {
@@ -77,117 +93,24 @@ void Overlay::CreateDockingSpace() {
     ImGui::End();
 }
 
-void Overlay::CreateSceneViewport(glm::mat4& viewportMatrix, const Window& window, Camera& camera) {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
-    ImGui::Begin("Scene Viewport");
-
-    float framePadding = ImGui::GetFontSize() + style->FramePadding.y * 2.f;
-
-    viewportPos = ImGui::GetWindowPos();
-    viewportSize = ImGui::GetContentRegionAvail();
-
-    viewportPos.y += ImGui::GetWindowSize().y - viewportSize.y;
-
-    if (viewportDimensions.z != (int)viewportSize.x || viewportDimensions.w != (int)viewportSize.y) {
-        viewportDimensions.z = (int)viewportSize.x;
-        viewportDimensions.w = (int)viewportSize.y;
-
-        glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
-
-        HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w, true);
-        PostProcessMaster::Framebuffer().resize(viewportDimensions, true);
-
-        camera.setProjectionAspect(viewportSize.x / viewportSize.y);
-
-        viewportMatrix = glm::mat4{
-            glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
-            glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
-            glm::vec4(0.f, 0.f, 1.f, 0.f),
-            glm::vec4(0.f, 0.f, 0.f, 1.f)
-        };
-    }
-
-    ImGui::Image((intptr_t)PostProcessMaster::Framebuffer().ColorbufferID(), viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
-
-    std::string text1 = "Application average: " + std::to_string(1000.f / io->Framerate) + " ms/frame";
-    std::string text2 = std::to_string(io->Framerate) + "FPS";
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    drawList->AddText(viewportPos, IM_COL32(10, 255, 255, 255), text1.c_str());
-    drawList->AddText(ImVec2(viewportPos.x, viewportPos.y + framePadding), IM_COL32(10, 255, 255, 255), text2.c_str());
-
-    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && isMouseOverWindow(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
-        mousePos = ImGui::GetMousePos();
-        mousePos.x -= viewportPos.x;
-        mousePos.y -= viewportPos.y;
-
-        if (mousePos.x > 0 || mousePos.x < viewportSize.x || mousePos.y > 0 || mousePos.y < viewportSize.y)
-        {
-            float scaleX = (float)window.getBufferWidth() / viewportSize.x;
-            float scaleY = (float)window.getBufferHeight() / viewportSize.y;
-
-            mousePos.x = mousePos.x * scaleX;
-            mousePos.y = mousePos.y * scaleY;
-
-            entityID = MouseSelector::EntitySelection().mouseSelectionResult(
-                window.getBufferHeight(), (int)mousePos.x, (int)mousePos.y
-            );
-        }
-    }
-
-    if (entityID != -1) {
-        Mesh* mesh = Mesh::meshList[entityID];
-        manipulate(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y, camera, mesh);
-    }
-
-    ImGui::PopStyleVar(1);
-    ImGui::End();
-}
-
-void Overlay::_updateTransformOperation(const Window& window) {
-    if (window.getKeyPress(GLFW_KEY_1))
-        transformOperation = ImGuizmo::TRANSLATE;
-
-    else if (window.getKeyPress(GLFW_KEY_2))
-        transformOperation = ImGuizmo::ROTATE;
-
-    else if (window.getKeyPress(GLFW_KEY_3))
-        transformOperation = ImGuizmo::SCALE;
-}
-
-void Overlay::manipulate(float x, float y, float width, float height, const Camera& camera, Mesh* mesh) {
-    ImGuizmo::AllowAxisFlip(false);
-    ImGuizmo::SetOrthographic(false);
-    ImGuizmo::Enable(true);
-    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-    ImGuizmo::SetRect(x, y, width, height);
-
-    ImGuizmo::Manipulate(
-        glm::value_ptr(camera.generateViewMatrix()), glm::value_ptr(camera.getProjectionMatrix()),
-        transformOperation, ImGuizmo::WORLD, glm::value_ptr(mesh->getModelMatrix())
-    );
-
-    colorBuffer[0] = mesh->getColor().x;
-    colorBuffer[1] = mesh->getColor().y;
-    colorBuffer[2] = mesh->getColor().z;
-
-    metallic = mesh->getMetallic();
-    roughness = mesh->getRoughness();
-    ao = mesh->getAO();
-
-    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(mesh->getModelMatrix()), translation, rotation, scale);
-}
-
 void Overlay::DrawVec3Control(const std::string& label, float* values, float resetValue, float columnWidth) {
     ImGui::PushID(label.c_str());
 
     ImGui::Columns(2);
     ImGui::SetColumnWidth(0, columnWidth);
+
+    float dragFloatHeight = ImGui::GetFrameHeight();
+    float textHeight = ImGui::CalcTextSize(label.c_str()).y;
+    float verticalOffset = (dragFloatHeight - textHeight) * 0.5f;
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
+
     ImGui::Text(label.c_str());
 
     ImGui::NextColumn();
 
     ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.5f, 0.5f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.f, 4.f));
 
     float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.f;
     ImVec2 buttonSize = { lineHeight + 3.f, lineHeight };
@@ -238,6 +161,13 @@ void Overlay::DrawDragFloat(const std::string& label, float* values, float speed
 
     ImGui::Columns(2);
     ImGui::SetColumnWidth(0, columnWidth);
+
+    float dragFloatHeight = ImGui::GetFrameHeight();
+    float textHeight = ImGui::CalcTextSize(label.c_str()).y;
+    float verticalOffset = (dragFloatHeight - textHeight) * 0.5f;
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
+
     ImGui::Text(label.c_str());
     ImGui::NextColumn();
 
@@ -253,6 +183,13 @@ void Overlay::DrawSliderFloat(const std::string& label, float* values, float min
 
     ImGui::Columns(2);
     ImGui::SetColumnWidth(0, columnWidth);
+
+    float dragFloatHeight = ImGui::GetFrameHeight();
+    float textHeight = ImGui::CalcTextSize(label.c_str()).y;
+    float verticalOffset = (dragFloatHeight - textHeight) * 0.5f;
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
+
     ImGui::Text(label.c_str());
     ImGui::NextColumn();
 
@@ -265,6 +202,11 @@ void Overlay::DrawSliderFloat(const std::string& label, float* values, float min
 void Overlay::DrawCombo(const std::string& label, std::vector<std::string>& options, std::vector<bool>& values, int& index) {
     ImGui::Columns(2);
     ImGui::SetColumnWidth(0, 150.f);
+    float dragFloatHeight = ImGui::GetFrameHeight();
+    float textHeight = ImGui::CalcTextSize(label.c_str()).y;
+    float verticalOffset = (dragFloatHeight - textHeight) * 0.5f;
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
     ImGui::Text(label.c_str());
     ImGui::NextColumn();
 
@@ -290,40 +232,119 @@ void Overlay::DrawCombo(const std::string& label, std::vector<std::string>& opti
     ImGui::Columns(1);
 }
 
-void Overlay::DrawDriverAndVendorInformation(const Window& window) const {
-    ImGui::Begin("Driver and Vendor Information");
+void Overlay::manipulate(float x, float y, float width, float height, const Camera& camera) {
+    ImGuizmo::BeginFrame();
+    ImGuizmo::AllowAxisFlip(true);
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::Enable(true);
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+    ImGuizmo::SetRect(x, y, width, height);
 
-    ImGui::Text("Vendor         : %s", window.vendor);
-    ImGui::Text("Renderer       : %s", window.renderer);
-    ImGui::Text("OpenGL version : %s", window.version);
-    ImGui::Text("GLSL version   : %s", window.glslVersion);
+    ImGuizmo::Manipulate(
+        glm::value_ptr(camera.generateViewMatrix()), glm::value_ptr(camera.getProjectionMatrix()),
+        transformOperation, ImGuizmo::WORLD, glm::value_ptr(Mesh::meshList[entityID]->getModelMatrix())
+    );
 
+    colorBuffer[0] = Mesh::meshList[entityID]->getColor().x;
+    colorBuffer[1] = Mesh::meshList[entityID]->getColor().y;
+    colorBuffer[2] = Mesh::meshList[entityID]->getColor().z;
+
+    metallic = Mesh::meshList[entityID]->getMetallic();
+    roughness = Mesh::meshList[entityID]->getRoughness();
+    ao = Mesh::meshList[entityID]->getAO();
+
+    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(Mesh::meshList[entityID]->getModelMatrix()), translation, rotation, scale);
+}
+
+void Overlay::DrawSceneViewport(glm::mat4& viewportMatrix, const Window& window, Camera& camera) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
+    ImGui::Begin("Scene Viewport");
+
+    float framePadding = ImGui::GetFontSize() + style->FramePadding.y * 2.f;
+
+    viewportPos = ImGui::GetWindowPos();
+    viewportSize = ImGui::GetContentRegionAvail();
+
+    viewportPos.y += ImGui::GetWindowSize().y - viewportSize.y;
+
+    if (viewportDimensions.z != (int)viewportSize.x || viewportDimensions.w != (int)viewportSize.y) {
+        viewportDimensions.z = (int)viewportSize.x;
+        viewportDimensions.w = (int)viewportSize.y;
+
+        glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
+
+        HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w, true);
+        PostProcessMaster::Framebuffer().resize(viewportDimensions, true);
+
+        camera.setProjectionAspect(viewportSize.x / viewportSize.y);
+
+        viewportMatrix = glm::mat4{
+            glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
+            glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
+            glm::vec4(0.f, 0.f, 1.f, 0.f),
+            glm::vec4(0.f, 0.f, 0.f, 1.f)
+        };
+    }
+
+    ImGui::Image((intptr_t)PostProcessMaster::Framebuffer().ColorbufferID(), viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
+    char frameTime[64] = { '\0' };
+    char frames[24] = { '\0' };
+
+    snprintf(frameTime, sizeof(frameTime), "Application average: %.4f ms/frame", 1000.f / io->Framerate);
+    snprintf(frames, sizeof(frames), "%.2f FPS", io->Framerate);
+
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    drawList->AddText(ImVec2(viewportPos.x + 4.f, viewportPos.y), IM_COL32(10, 255, 50, 255), frameTime);
+    drawList->AddText(ImVec2(viewportPos.x + 4.f, viewportPos.y + framePadding), IM_COL32(10, 255, 50, 255), frames);
+
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && isMouseOverWindow(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
+        mousePos = ImGui::GetMousePos();
+        mousePos.x -= viewportPos.x;
+        mousePos.y -= viewportPos.y;
+
+        if (mousePos.x >= 0 || mousePos.x <= viewportSize.x || mousePos.y >= 0 || mousePos.y <= viewportSize.y)
+        {
+            float scaleX = (float)window.getBufferWidth() / viewportSize.x;
+            float scaleY = (float)window.getBufferHeight() / viewportSize.y;
+
+            mousePos.x = mousePos.x * scaleX;
+            mousePos.y = mousePos.y * scaleY;
+
+            entityID = MouseSelector::EntitySelector().mouseSelectionResult(
+                window.getBufferHeight(), (int)mousePos.x, (int)mousePos.y
+            );
+        }
+    }
+
+    if (entityID != -1) {
+        _updateTransformOperation(window);
+        manipulate(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y, camera);
+    }
+
+    ImGui::PopStyleVar(1);
     ImGui::End();
 }
 
-void Overlay::DrawRuntimeInformation() const {
-    ImGui::Begin("Runtime");
+void Overlay::_updateTransformOperation(const Window& window) {
+    if (window.getKeyPress(GLFW_KEY_1))
+        transformOperation = ImGuizmo::TRANSLATE;
 
-    int viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
+    else if (window.getKeyPress(GLFW_KEY_2))
+        transformOperation = ImGuizmo::ROTATE;
 
-    ImGui::Text("Viewport dimensions   : (%i, %i, %i, %i)", viewport[0], viewport[1], viewport[2], viewport[3]);
-    ImGui::Text("Mouse cursor position : (%.2f, %.2f)", mousePos.x, mousePos.y);
-    ImGui::Text("Entity Index          : %i", entityID);
-    ImGui::Text("Viewport Size         : (%.1f, %.1f)", viewportSize.x, viewportSize.y);
-
-    ImGui::End();
+    else if (window.getKeyPress(GLFW_KEY_3))
+        transformOperation = ImGuizmo::SCALE;
 }
 
-void Overlay::render(const Window& window, glm::vec3& dirLightLocation) {
+void Overlay::DrawDetailsPanel(const Window& window, glm::vec3& dirLightDirection) {
     DrawDriverAndVendorInformation(window);
 
     if (runtimeInformation) DrawRuntimeInformation();
 
     ImGui::Begin("Details Panel");
 
-    if (ImGui::TreeNode("Scene")) {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    if (ImGui::CollapsingHeader("Scene")) {
         ImGui::Checkbox("Render Skybox", &drawSkybox);
         ImGui::Checkbox("Display Coordinate System", &displayCoordinateSystem);
         ImGui::Checkbox("Display Grid", &displayGrid);
@@ -331,88 +352,89 @@ void Overlay::render(const Window& window, glm::vec3& dirLightLocation) {
         ImGui::Checkbox("Enable HDR", &enableHDR);
         ImGui::Checkbox("Enable Bloom", &enableBloom);
         ImGui::Checkbox("Enable Shadows", &enableShadows);
-        ImGui::Checkbox("SSAO", &enableSSAO);
+        ImGui::Checkbox("Enable SSAO", &enableSSAO);
         ImGui::Checkbox("Runtime Information", &runtimeInformation);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        ImGui::TreePop();
     }
 
     ImGui::NewLine();
 
-    if (ImGui::TreeNode("HDR")) {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    if (ImGui::CollapsingHeader("HDR")) {
         static int msaaSelection = 0;
         DrawDragFloat("Exposure", &exposure, 0.01f, 150.f);
         DrawCombo("MSAA Samples", samples, selected, msaaSelection);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        ImGui::TreePop();
     }
 
     ImGui::NewLine();
 
-    if (ImGui::TreeNode("Bloom")) {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    if (ImGui::CollapsingHeader("Bloom")) {
         DrawDragFloat("Filter Radius", &filterRadius, 0.0001f, 150.f);
         bloomThreshold = bloomThreshold < 0.f ? 0.f : bloomThreshold;
         DrawDragFloat("Knee", &bloomThreshold, 0.01f, 150.f);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        ImGui::TreePop();
     }
 
     ImGui::NewLine();
 
-    if (ImGui::TreeNode("Shadows")) {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    if (ImGui::CollapsingHeader("Shadows")) {
         DrawDragFloat("PCF Filter Radius", &shadowRadius, 0.001f, 150.f);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        ImGui::TreePop();
     }
 
     ImGui::NewLine();
 
-    if (ImGui::TreeNode("SSAO")) {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    if (ImGui::CollapsingHeader("SSAO")) {
         DrawDragFloat("Radius", &ssaoRadius, 0.1f, 150.f);
         DrawDragFloat("Bias", &ssaoBias, 0.001f, 150.f);
         DrawDragFloat("Occlusion Power", &ssaoOcclusionPower, 1.f, 150.f);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        ImGui::TreePop();
     }
 
     ImGui::NewLine();
 
-    if (ImGui::TreeNode("Material Properties")) {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, 120.f);
-        ImGui::Text("Albedo");
-        ImGui::NextColumn();
-        ImGui::ColorEdit4("##color", colorBuffer);
-        ImGui::Columns(1);
+    if (ImGui::CollapsingHeader("Properties")) {
+        if (ImGui::TreeNode("Material Properties")) {
+            ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 120.f);
 
-        DrawSliderFloat("Metallic", &metallic, 0.f, 1.f);
-        DrawSliderFloat("Roughness", &roughness, 0.f, 1.f);
-        DrawSliderFloat("AO", &ao, 0.f, 1.f);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+            float dragFloatHeight = ImGui::GetFrameHeight();
+            float textHeight = ImGui::CalcTextSize("Albedo").y;
+            float verticalOffset = (dragFloatHeight - textHeight) * 0.5f;
 
-        ImGui::TreePop();
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
+
+            ImGui::Text("Albedo");
+            ImGui::NextColumn();
+            ImGui::ColorEdit4("##color", colorBuffer);
+            ImGui::Columns(1);
+
+            DrawSliderFloat("Metallic", &metallic, 0.f, 1.f);
+            DrawSliderFloat("Roughness", &roughness, 0.f, 1.f);
+            DrawSliderFloat("AO", &ao, 0.f, 1.f);
+
+            ImGui::TreePop();
+        }
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+        ImGui::NewLine();
+
+        if (ImGui::TreeNode("Transforms"))
+        {
+            ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+            DrawVec3Control("Translation", translation);
+            DrawVec3Control("Rotation", rotation);
+            DrawVec3Control("Scale", scale, 1.f);
+
+            ImGui::TreePop();
+        }
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
     }
 
     ImGui::NewLine();
-
-    if (ImGui::TreeNode("Transforms"))
-    {
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-        DrawVec3Control("Translation", translation);
-        DrawVec3Control("Rotation", rotation);
-        DrawVec3Control("Scale", scale, 1.f);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-
-        ImGui::TreePop();
-    }
-
-    ImGui::NewLine();
-    DrawVec3Control("Directional Light", glm::value_ptr(dirLightLocation), 0.f, 150.f);
+    DrawVec3Control("Directional Light", glm::value_ptr(dirLightDirection), 0.f, 150.f);
 
     ImGui::End();
 
@@ -427,15 +449,31 @@ void Overlay::render(const Window& window, glm::vec3& dirLightLocation) {
         Mesh::meshList[entityID]->setColor(color);
         Mesh::meshList[entityID]->setMeshMaterial(roughness, metallic, ao);
     }
+}
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+void Overlay::DrawDriverAndVendorInformation(const Window& window) const {
+    ImGui::Begin("Driver and Vendor Information");
 
-    if (io->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(window.getGlfwWindow());
-    }
+    ImGui::Text("Vendor : %s", window.vendor);
+    ImGui::Text("Renderer : %s", window.renderer);
+    ImGui::Text("OpenGL version : %s", window.version);
+    ImGui::Text("GLSL version : %s", window.glslVersion);
+
+    ImGui::End();
+}
+
+void Overlay::DrawRuntimeInformation() const {
+    ImGui::Begin("Runtime");
+
+    int viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    ImGui::Text("Viewport dimensions : (%i, %i, %i, %i)", viewport[0], viewport[1], viewport[2], viewport[3]);
+    ImGui::Text("Mouse cursor position : (%.2f, %.2f)", mousePos.x, mousePos.y);
+    ImGui::Text("Entity Index : %i", entityID);
+    ImGui::Text("Viewport Size : (%.1f, %.1f)", viewportSize.x, viewportSize.y);
+
+    ImGui::End();
 }
 
 Overlay::~Overlay() {

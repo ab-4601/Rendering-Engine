@@ -2,6 +2,10 @@
 
 HDR::HDR() {
 	quad.createQuad();
+
+	glGenFramebuffers(1, &FBO);
+	glGenTextures(1, &colorBuffer);
+	glGenRenderbuffers(1, &renderBuffer);
 }
 
 bool HDR::checkFramebufferStatus() {
@@ -16,25 +20,17 @@ bool HDR::checkFramebufferStatus() {
 void HDR::clearBuffers() {
 	if (FBO != 0) {
 		glDeleteFramebuffers(1, &FBO);
-		FBO = 0;
-	}
-
-	if (colorBuffer != 0) {
 		glDeleteTextures(1, &colorBuffer);
-		colorBuffer = 0;
-	}
+		glDeleteTextures(1, &colorBuffer);
 
-	if (renderBuffer != 0) {
-		glDeleteRenderbuffers(1, &renderBuffer);
-		renderBuffer = 0;
+		colorBuffer = 0;
+		colorBuffer = 0;
+		FBO = 0;
 	}
 }
 
 void HDR::_init(int width, int height) {
-	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	glGenTextures(1, &colorBuffer);
 
 	glBindTexture(GL_TEXTURE_2D, colorBuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -44,7 +40,6 @@ void HDR::_init(int width, int height) {
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
 
-	glGenRenderbuffers(1, &renderBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
@@ -59,10 +54,7 @@ void HDR::_init(int width, int height) {
 }
 
 void HDR::_initMSAA(int width, int height, int samples) {
-	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	glGenTextures(1, &colorBuffer);
 
 	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorBuffer);
 
@@ -74,7 +66,6 @@ void HDR::_initMSAA(int width, int height, int samples) {
 		GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, colorBuffer, 0
 	);
 
-	glGenRenderbuffers(1, &renderBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
