@@ -10,6 +10,7 @@ layout (binding = 2) uniform sampler2D blendWeightTexture;
 
 uniform ivec2 screenResolution;
 uniform float exposure;
+uniform float knee;
 uniform bool enableBloom;
 
 const float gamma = 2.2f;
@@ -96,7 +97,7 @@ void main() {
 	vec3 bloomColor = texture2D(bloomBuffer, texel).rgb;
 
 	if(enableBloom)
-		hdrColor = mix(hdrColor, bloomColor, 0.04f);
+		hdrColor = mix(hdrColor, bloomColor, knee);
 
 	vec3 mapped = aces(hdrColor);
 

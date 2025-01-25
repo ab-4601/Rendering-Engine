@@ -14,10 +14,18 @@ void MouseSelector::pickingPhase(glm::ivec4 viewportDimensions, const Window& wi
 
 	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
 		shader.setUint("objectIndex", Mesh::meshList[i]->getObjectID() + 1);
-		shader.setUint("drawIndex", static_cast<uint32_t>(i));
+		shader.setUint("drawIndex", false);
 		shader.setMat4("model", Mesh::meshList[i]->getModelMatrix());
 
 		Mesh::meshList[i]->drawMesh(GL_TRIANGLES);
+	}
+
+	for (size_t i = 0; i < Model::modelList.size(); i++) {
+		shader.setUint("objectIndex", Model::modelList[i]->getModelID() + 1);
+		shader.setUint("drawIndex", true);
+		shader.setMat4("model", Model::modelList[i]->getModelMatrix());
+
+		Model::modelList[i]->drawModel(GL_TRIANGLES);
 	}
 
 	shader.endShader();
@@ -27,16 +35,16 @@ void MouseSelector::pickingPhase(glm::ivec4 viewportDimensions, const Window& wi
 	glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
 }
 
-int MouseSelector::mouseSelectionResult(int windowHeight, int x, int y) {
-	int clickedObjectID = -1;
+glm::ivec2 MouseSelector::mouseSelectionResult(int windowHeight, int x, int y) {
+	glm::ivec2 clickedObjectID{ -1 };
 
 	PixelInfo pixel = pixelInfo.readPixel(x, windowHeight - y - 1);
 
 	if (pixel.objectID != 0) {
-		clickedObjectID = (int)pixel.objectID - 1;
+		clickedObjectID = glm::ivec2{ (int)pixel.objectID - 1, (int)pixel.drawID };
 
 		return clickedObjectID;
 	}
 
-	return -1;
+	return glm::ivec2(-1);
 }

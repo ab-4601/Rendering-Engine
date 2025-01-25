@@ -40,7 +40,7 @@ void Skybox::_initFBO() {
 void Skybox::loadEquirectangularMap(const char* fileName) {
 	stbi_set_flip_vertically_on_load(true);
 
-	float* data = stbi_loadf(fileName, &width, &height, &bitDepth, 0);
+	float* data = stbi_loadf(fileName, &width, &height, &nChannels, 0);
 
 	if (data) {
 		glGenTextures(1, &textureID);
@@ -165,7 +165,7 @@ void Skybox::_generatePrefilterMipmap() {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
-	uint32_t maxMipLevels = 10;
+	uint32_t maxMipLevels = 5;
 
 	prefilterShader.useShader();
 	prefilterShader.setMat4("projection", projection);

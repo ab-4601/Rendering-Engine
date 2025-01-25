@@ -30,7 +30,7 @@ public:
 		pixelInfo.resize(width, height);
 	}
 	void pickingPhase(glm::ivec4 viewportDimensions, const Window& window, uint32_t framebuffer = 0);
-	int mouseSelectionResult(int windowHeight, int x, int y);
+	glm::ivec2 mouseSelectionResult(int windowHeight, int x, int y);
 
 	~MouseSelector() = default;
 };

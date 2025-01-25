@@ -152,12 +152,8 @@ void Window::setupWindow() {
     //glfwSetInputMode(this->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Allow modern extension features
-    glewExperimental = GL_TRUE;
-
-    if (glewInit() != GLEW_OK) {
-        GLenum result{};
-        glewGetErrorString(result);
-        std::cerr << "GLEW initialization failed\n" << result << std::endl;
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize glad" << std::endl;
         glfwDestroyWindow(window);
         glfwTerminate();
         exit(1);

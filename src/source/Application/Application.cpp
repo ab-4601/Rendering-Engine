@@ -115,7 +115,6 @@ void Application::setGlobalPBRUniforms(Shader& shader) {
 }
 
 void Application::start() {
-    glm::vec3 lightDirection(3000.f, 3000.f, 0.f);
     /*glm::vec3 pointLightPosition1(20.f, 20.f, 20.f);
     glm::vec3 pointLightPosition2(100.f, 30.f, 100.f);
     glm::vec3 spotLightPosition(300.f, 80.f, 300.f);
@@ -164,26 +163,30 @@ void Application::start() {
     modelMatrix = glm::mat4(1.f);
     modelMatrix = glm::scale(modelMatrix, glm::vec3(5.f, 5.f, 5.f));
 
-    /*Terrain terrain(500, 500);
-    terrain.generateHeightMaps(3);
+    /*Terrain terrain(1000, 1000);
+    terrain.generateHeightMaps(5);
     terrain.setMeshMaterial(0.f, 1.f, 1.f);
     terrain.generateTerrain();
     terrain.loadMesh();
-    terrain.setModelMatrix(model);
+    terrain.setModelMatrix(modelMatrix);
     terrain.setColor(glm::vec3(0.2f, 0.2f, 0.2f));*/
 
-    Model suntemple(
+    /*Model suntemple(
         "src/Content/Models/SunTemple/SunTemple.fbx",
         "src/Content/Models/SunTemple/Textures/",
         aiTextureType_DIFFUSE,
         aiTextureType_NORMALS,
         aiTextureType_SPECULAR,
+        aiTextureType_DIFFUSE_ROUGHNESS,
+        aiTextureType_AMBIENT_OCCLUSION,
         aiTextureType_EMISSIVE,
         true, true
-    );
+    );*/
 
     /*modelMatrix = glm::mat4(1.f);
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(100.f));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(200.f));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(-90.f), glm::vec3(1.f, 0.f, 0.f));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(45.f), glm::vec3(0.f, 0.f, 1.f));
 
     Model isometricRoom(
         "src/Content/Models/IsometricRoom/Isometric Room v5058 p4866.fbx",
@@ -191,16 +194,18 @@ void Application::start() {
         aiTextureType_DIFFUSE,
         aiTextureType_NORMALS,
         aiTextureType_METALNESS,
+        aiTextureType_SHININESS,
+        aiTextureType_AMBIENT,
         aiTextureType_EMISSIVE,
-        false, true
+        false, true, false
     );
 
     isometricRoom.setModelMatrix(modelMatrix);*/
 
-    /*Model sponza(
+    Model sponza(
         "src/Content/Models/Sponza/Sponza.gltf",
         "src/Content/Models/Sponza/"
-    );*/
+    );
 
     CoordinateSystem::Widget().createCoordinateSystem();
 
@@ -212,268 +217,253 @@ void Application::start() {
     glm::vec3 fireParticlePosition{ 1125.f, 120.f, 400.f };
     ParticleSystem fireSystem(particleColor, 30.f, -30.f, 1.f, 30.f, fire);*/
 
+    //HDR::Framebuffer()._init(window.getBufferWidth(), window.getBufferHeight());
     HDR::Framebuffer()._initMSAA(window.getBufferWidth(), window.getBufferHeight());
 
     setGlobalPBRUniforms(forwardShader);
     //setGlobalPBRUniforms(deferredShader);
 
-    glClearColor(0.f, 0.01f, 0.01f, 1.f);
+    glfwSwapInterval(Overlay::Editor().enableVsync);
 
     while (!glfwWindowShouldClose(window.getGlfwWindow())) {
-        mainLoopForward(pSystem, modelMatrix, particlePosition, lightDirection);
+        glfwPollEvents();
+
+        if (window.getBufferWidth() == 0 || window.getBufferHeight() == 0)
+            continue;
+
+        if (window.getBufferWidth() != bufferWidth || window.getBufferHeight() != bufferHeight) {
+            bufferWidth = window.getBufferWidth();
+            bufferHeight = window.getBufferHeight();
+
+            MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
+        }
+
+        currTime = (float)glfwGetTime();
+        deltaTime = currTime - lastTime;
+        elapsedTime += deltaTime;
+        lastTime = currTime;
+
+        EditorCamera.keyFunctionality(window.getCurrWindow(), deltaTime);
+        EditorCamera.mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
+
+        pSystem.updateParticles(deltaTime, EditorCamera.getCameraPosition());
+        //fireSystem.updateParticles(deltaTime, this->EditorCamera.getCameraPosition());
+
+        if(elapsedTime >= frameRateCap) {
+            if (!Overlay::Editor().enableVsync)
+                frameRateCap = Overlay::Editor().frameRateCap;
+            else
+                frameRateCap = 0;
+
+            mainLoopForward(pSystem, modelMatrix, particlePosition);
+        }
     }
 }
 
-void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
-{
-    if (window.getBufferWidth() != bufferWidth || window.getBufferHeight() != bufferHeight) {
-        bufferWidth = window.getBufferWidth();
-        bufferHeight = window.getBufferHeight();
+void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition) {
+    Overlay::Editor().newFrame();
+    elapsedTime = 0.f;
 
-        MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
+    skylight.updateLightLocation(Overlay::Editor().directionalLightPosition);
+
+    if (Overlay::Editor().enableHDR) {
+        HDR::Framebuffer().enableHDRWriting();
+        currentFramebuffer = HDR::Framebuffer().FramebufferID();
+    }
+    else {
+        PostProcessMaster::Framebuffer().enableWriting();
+        currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
     }
 
-    currTime = (float)glfwGetTime();
-    deltaTime = currTime - lastTime;
-    elapsedTime += deltaTime;
-    lastTime = currTime;
-
-    camera.keyFunctionality(window.getCurrWindow(), deltaTime);
-    camera.mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
-
-    //fireSystem.updateParticles(deltaTime, this->camera.getCameraPosition());
-    pSystem.updateParticles(deltaTime, camera.getCameraPosition());
-
-    if (elapsedTime >= 0.016f)
-    {
-        Overlay::Editor().newFrame();
-
-        currentFramebuffer = 0;
-        elapsedTime = 0.f;
-
-        skylight.updateLightLocation(lightDirection);
-
-        if (Overlay::Editor().enableHDR) {
-            HDR::Framebuffer().enableHDRWriting();
-            currentFramebuffer = HDR::Framebuffer().FramebufferID();
-        }
-        else {
-            PostProcessMaster::Framebuffer().enableWriting();
-            currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
-        }
-
-        if (Overlay::Editor().drawSkybox)
-            skybox.renderSkybox();
+    if (Overlay::Editor().drawSkybox)
+        skybox.renderSkybox();
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        lightSources.renderLightSources(skylight, pointLights, spotLights, pointLightCount, spotLightCount);
+    lightSources.renderLightSources(skylight, pointLights, spotLights, pointLightCount, spotLightCount);
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        if (Overlay::Editor().enableShadows) {
-            csm.calculateShadows(Overlay::Editor().getViewportDimensions(), lightDirection, currentFramebuffer);
-        }
-
-        MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
-
-        mouseCoords = window.MouseCoordinates();
-
-        forwardShader.useShader();
-
-        forwardShader.setMat4("viewportMatrix", viewportMatrix);
-
-        setLightingUniforms(forwardShader);
-
-        forwardShader.setUint("calcShadows", Overlay::Editor().enableShadows);
-        forwardShader.setUint("enableSSAO", Overlay::Editor().enableSSAO);
-        forwardShader.setUint("drawWireframe", Overlay::Editor().drawWireframe);
-        forwardShader.setFloat("radius", Overlay::Editor().shadowRadius);
-
-        for (size_t i = 0; i < Model::modelList.size(); i++) {
-            Model::modelList[i]->renderModel(forwardShader);
-        }
-
-        if (Overlay::Editor().entityID < (int)Mesh::meshList.size() && Overlay::Editor().entityID != -1) {
-            Mesh::meshList[Overlay::Editor().entityID]->renderMeshWithOutline(forwardShader, outlineShader);
-        }
-
-        for (size_t i = 0; i < Mesh::meshList.size(); i++) {
-            if ((int)i != Overlay::Editor().entityID)
-                Mesh::meshList[i]->renderMesh(forwardShader);
-        }
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        if (Overlay::Editor().displayGrid)
-            Grid::EditorGrid().renderGrid();
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        if (Overlay::Editor().displayCoordinateSystem)
-            CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), camera);
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        particlePosition = camera.getCameraPosition() + camera.getFrontVector() * 200.f;
-        //fireSystem.generateParticles(fireParticlePosition, 0.f);
-
-        if (window.getKeyPress(GLFW_KEY_R)) {
-            pSystem.generateParticles(particlePosition, 0.f);
-        }
-
-        pSystem.renderParticles(&window, camera, modelMatrix);
-        //fireSystem.renderParticles(&this->window, this->camera, modelMatrix);
-
-// ----------------------------------------------------------------------------------------------------------------
-
-        if (Overlay::Editor().enableHDR) {
-            PostProcessMaster::Framebuffer().postProcessingPassMSAA(
-                Overlay::Editor().enableBloom, Overlay::Editor().bloomThreshold,
-                Overlay::Editor().filterRadius, Overlay::Editor().exposure
-            );
-        }
-        else
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        Overlay::Editor().DrawSceneViewport(viewportMatrix, window, camera);
-        Overlay::Editor().DrawDetailsPanel(window, lightDirection);
-        Overlay::Editor().Render(window.getGlfwWindow());
-
-        glfwSwapBuffers(window.getMainWindow());
-        glClear(GL_COLOR_BUFFER_BIT);
+    if (Overlay::Editor().enableShadows) {
+        csm.calculateShadows(Overlay::Editor().getViewportDimensions(), skylight.getLightDirection(), currentFramebuffer);
     }
 
-    glfwPollEvents();
+    MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
+
+    forwardShader.useShader();
+
+    forwardShader.setMat4("viewportMatrix", viewportMatrix);
+
+    setLightingUniforms(forwardShader);
+
+    forwardShader.setUint("calcShadows", Overlay::Editor().enableShadows);
+    forwardShader.setUint("enableSSAO", Overlay::Editor().enableSSAO);
+    forwardShader.setUint("drawWireframe", Overlay::Editor().drawWireframe);
+    forwardShader.setFloat("radius", Overlay::Editor().shadowRadius);
+    forwardShader.setFloat("emissiveIntensity", Overlay::Editor().emissiveMaterialStrength);
+
+    for (size_t i = 0; i < Model::modelList.size(); i++) {
+        if ((int)i == Overlay::Editor().entityID.x && (bool)Overlay::Editor().entityID.y == true)
+            continue;
+
+        Model::modelList[i]->renderModel(forwardShader);
+    }
+
+    if (Overlay::Editor().entityID.x != -1) {
+        if ((bool)Overlay::Editor().entityID.y == false && Overlay::Editor().entityID.x < Mesh::meshList.size())
+            Mesh::meshList[Overlay::Editor().entityID.x]->renderMeshWithOutline(forwardShader, outlineShader);
+
+        else if ((bool)Overlay::Editor().entityID.y == true && Overlay::Editor().entityID.x < Model::modelList.size())
+            Model::modelList[Overlay::Editor().entityID.x]->renderModelWithOutline(forwardShader, outlineShader);
+    }
+
+    for (size_t i = 0; i < Mesh::meshList.size(); i++) {
+        if ((int)i == Overlay::Editor().entityID.x && (bool)Overlay::Editor().entityID.y == false)
+            continue;
+            
+        Mesh::meshList[i]->renderMesh(forwardShader);
+    }
+
+// ----------------------------------------------------------------------------------------------------------------
+
+    if (Overlay::Editor().displayGrid)
+        Grid::EditorGrid().renderGrid();
+
+// ----------------------------------------------------------------------------------------------------------------
+
+    if (Overlay::Editor().displayCoordinateSystem)
+        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), EditorCamera);
+
+// ----------------------------------------------------------------------------------------------------------------
+
+    particlePosition = EditorCamera.getCameraPosition() + EditorCamera.getFrontVector() * 200.f;
+    //fireSystem.generateParticles(fireParticlePosition, 0.f);
+
+    if (window.getKeyPress(GLFW_KEY_R)) {
+        pSystem.generateParticles(particlePosition, 0.f);
+    }
+
+    pSystem.renderParticles(&window, EditorCamera, modelMatrix);
+    //fireSystem.renderParticles(&this->window, EditorCamera, modelMatrix);
+
+// ----------------------------------------------------------------------------------------------------------------
+
+    if (Overlay::Editor().enableHDR) {
+        PostProcessMaster::Framebuffer().postProcessingPassMSAA(
+            Overlay::Editor().enableBloom, Overlay::Editor().bloomThreshold, Overlay::Editor().bloomKnee,
+            Overlay::Editor().filterRadius, Overlay::Editor().exposure
+        );
+    }
+    else
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    Overlay::Editor().DrawEditorForward(window, EditorCamera, viewportMatrix);
+    Overlay::Editor().Render(window.getGlfwWindow());
+
+    glfwSwapBuffers(window.getMainWindow());
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection)
-{
-    if (window.getBufferWidth() != bufferWidth || window.getBufferHeight() != bufferHeight) {
-        bufferWidth = window.getBufferWidth();
-        bufferHeight = window.getBufferHeight();
+void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition) {
+    elapsedTime = 0.f;
 
-        MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
+    Overlay::Editor().newFrame();
+
+    skylight.updateLightLocation(Overlay::Editor().directionalLightPosition);
+
+    if (Overlay::Editor().enableHDR) {
+        HDR::Framebuffer().enableHDRWriting();
+        currentFramebuffer = HDR::Framebuffer().FramebufferID();
+    }
+    else {
+        PostProcessMaster::Framebuffer().enableWriting();
+        currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
     }
 
-    currTime = (float)glfwGetTime();
-    deltaTime = currTime - lastTime;
-    elapsedTime += deltaTime;
-    lastTime = currTime;
+    if (Overlay::Editor().enableShadows) {
+        csm.calculateShadows(Overlay::Editor().getViewportDimensions(), skylight.getLightDirection(), currentFramebuffer);
+    }
 
-    camera.keyFunctionality(window.getCurrWindow(), deltaTime);
-    camera.mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
+    MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
 
-    pSystem.updateParticles(deltaTime, camera.getCameraPosition());
-    //fireSystem.updateParticles(deltaTime, this->camera.getCameraPosition());
+    SSAO::Framebuffer().setRadius(Overlay::Editor().ssaoRadius);
+    SSAO::Framebuffer().setBias(Overlay::Editor().ssaoBias);
+    SSAO::Framebuffer().setOcclusionPower(Overlay::Editor().ssaoOcclusionPower);
 
-    if (elapsedTime >= 0.016f)
-    {
-        currentFramebuffer = 0;
-        elapsedTime = 0.f;
+    GBuffer::Framebuffer().updateWireframeBool(Overlay::Editor().drawWireframe);
+    GBuffer::Framebuffer().updateBuffer(outlineShader, Overlay::Editor().entityID, currentFramebuffer);
+    SSAO::Framebuffer().calcSSAO(currentFramebuffer);
 
-        Overlay::Editor().newFrame();
+    deferredShader.useShader();
 
-        skylight.updateLightLocation(lightDirection);
+    setLightingUniforms(deferredShader);
 
-        if (Overlay::Editor().enableHDR) {
-            HDR::Framebuffer().enableHDRWriting();
-            currentFramebuffer = HDR::Framebuffer().FramebufferID();
-        }
-        else {
-            PostProcessMaster::Framebuffer().enableWriting();
-            currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
-        }
+    deferredShader.setUint("calcShadows", Overlay::Editor().enableShadows);
+    deferredShader.setUint("enableSSAO", Overlay::Editor().enableSSAO);
+    deferredShader.setFloat("radius", Overlay::Editor().shadowRadius);
 
-        
-        if (Overlay::Editor().enableShadows) {
-            csm.calculateShadows(Overlay::Editor().getViewportDimensions(), lightDirection, currentFramebuffer);
-        }
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().positionBuffer());
 
-        MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
+    glActiveTexture(GL_TEXTURE8);
+    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().albedoBuffer());
 
-        mouseCoords = window.MouseCoordinates();
+    glActiveTexture(GL_TEXTURE9);
+    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().normalBuffer());
 
-        SSAO::Framebuffer().setRadius(Overlay::Editor().ssaoRadius);
-        SSAO::Framebuffer().setBias(Overlay::Editor().ssaoBias);
-        SSAO::Framebuffer().setOcclusionPower(Overlay::Editor().ssaoOcclusionPower);
+    glActiveTexture(GL_TEXTURE10);
+    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().metallicBuffer());
 
-        GBuffer::Framebuffer().updateWireframeBool(Overlay::Editor().drawWireframe);
-        GBuffer::Framebuffer().updateBuffer(outlineShader, Overlay::Editor().entityID, currentFramebuffer);
-        SSAO::Framebuffer().calcSSAO(currentFramebuffer);
+    glActiveTexture(GL_TEXTURE11);
+    glBindTexture(GL_TEXTURE_2D, SSAO::Framebuffer().occlusionBuffer());
 
-        deferredShader.useShader();
-
-        setLightingUniforms(deferredShader);
-
-        deferredShader.setUint("calcShadows", Overlay::Editor().enableShadows);
-        deferredShader.setUint("enableSSAO", Overlay::Editor().enableSSAO);
-        deferredShader.setFloat("radius", Overlay::Editor().shadowRadius);
-
-        glActiveTexture(GL_TEXTURE7);
-        glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().positionBuffer());
-
-        glActiveTexture(GL_TEXTURE8);
-        glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().albedoBuffer());
-
-        glActiveTexture(GL_TEXTURE9);
-        glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().normalBuffer());
-
-        glActiveTexture(GL_TEXTURE10);
-        glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().metallicBuffer());
-
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_2D, SSAO::Framebuffer().occlusionBuffer());
-
-        quad.renderQuad();
+    quad.renderQuad();
 
 //----------------------------------------------------------------------------------------------------------------
 
-        if (Overlay::Editor().drawSkybox)
-            skybox.renderSkybox();
+    if (Overlay::Editor().drawSkybox)
+        skybox.renderSkybox();
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        lightSources.renderLightSources(skylight, pointLights, spotLights, pointLightCount, spotLightCount);
+    lightSources.renderLightSources(skylight, pointLights, spotLights, pointLightCount, spotLightCount);
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        if (Overlay::Editor().displayGrid)
-            Grid::EditorGrid().renderGrid();
+    if (Overlay::Editor().displayGrid)
+        Grid::EditorGrid().renderGrid();
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        if (Overlay::Editor().displayCoordinateSystem)
-            CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), camera);
+    if (Overlay::Editor().displayCoordinateSystem)
+        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), EditorCamera);
 
 //----------------------------------------------------------------------------------------------------------------
 
-        particlePosition = camera.getCameraPosition() + camera.getFrontVector() * 200.f;
-        //fireSystem.generateParticles(fireParticlePosition, 0.f);
+    particlePosition = EditorCamera.getCameraPosition() + EditorCamera.getFrontVector() * 200.f;
+    //fireSystem.generateParticles(fireParticlePosition, 0.f);
 
-        if (window.getKeyPress(GLFW_KEY_R)) {
-            pSystem.generateParticles(particlePosition, 0.f);
-        }
+    if (window.getKeyPress(GLFW_KEY_R)) {
+        pSystem.generateParticles(particlePosition, 0.f);
+    }
 
-        pSystem.renderParticles(&window, camera, modelMatrix);
-        //fireSystem.renderParticles(&window, camera, modelMatrix);
+    pSystem.renderParticles(&window, EditorCamera, modelMatrix);
+    //fireSystem.renderParticles(&window, EditorCamera, modelMatrix);
 
 // ----------------------------------------------------------------------------------------------------------------
 
-        if (Overlay::Editor().enableHDR) {
-            PostProcessMaster::Framebuffer().postProcessingPass(
-                Overlay::Editor().enableBloom, Overlay::Editor().bloomThreshold,
-                Overlay::Editor().filterRadius, Overlay::Editor().exposure
-            );
-        }
-
-        Overlay::Editor().DrawSceneViewport(viewportMatrix, window, camera);
-        Overlay::Editor().DrawDetailsPanel(window, lightDirection);
-        Overlay::Editor().Render(window.getGlfwWindow());
-
-        glfwSwapBuffers(window.getMainWindow());
-        glClear(GL_COLOR_BUFFER_BIT);
+    if (Overlay::Editor().enableHDR) {
+        PostProcessMaster::Framebuffer().postProcessingPass(
+            Overlay::Editor().enableBloom, Overlay::Editor().bloomThreshold, Overlay::Editor().bloomKnee,
+            Overlay::Editor().filterRadius, Overlay::Editor().exposure
+        );
     }
+    else
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glfwPollEvents();
+    Overlay::Editor().DrawEditorDeferred(window, EditorCamera, viewportMatrix);
+    Overlay::Editor().Render(window.getGlfwWindow());
+
+    glfwSwapBuffers(window.getMainWindow());
+    glClear(GL_COLOR_BUFFER_BIT);
 }

@@ -3,7 +3,7 @@
 
 #include "../Mesh.h"
 
-class Cube : public Mesh {
+class Cube final : public Mesh {
 public:
 	Cube(GLenum windingOrder = GL_CCW);
 

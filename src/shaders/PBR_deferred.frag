@@ -36,20 +36,12 @@ struct SpotLight {
 	float edge;
 };
 
-struct Material {
-	vec3 albedo;
-	float metallic;
-	float roughness;
-	float ao;
-};
-
 uniform uint pointLightCount;
 uniform uint spotLightCount;
 
 uniform DirectionalLight directionalLight;
 uniform PointLight pointLights[MAX_POINT_LIGHTS];
 uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
-uniform Material material;
 
 layout (binding = 1) uniform samplerCube irradianceMap;
 layout (binding = 2) uniform samplerCube prefilterMap;
@@ -73,7 +65,7 @@ uniform vec3 offsetTexSize;
 uniform bool enableSSAO;
 uniform bool calcShadows;
 
-layout (std430, binding = 0) buffer CameraData {
+layout (std140, binding = 0) uniform CameraData {
 	mat4 projection;
 	mat4 view;
 	vec3 cameraPosition;
@@ -226,11 +218,6 @@ vec4 calculateLighting(Light light, vec3 direction) {
 	float NdotL = max(dot(N, L), 0.f);
 	Lo = (kD * albedo / PI + specular) * light.color * NdotL;
 
-	if(calcShadows) {
-		float shadow = calculateDirectionalShadow();
-		Lo = shadow * Lo;
-	}
-
 	return vec4(Lo, 1.f);
 }
 
@@ -289,7 +276,7 @@ void main() {
 	F0 = mix(F0, albedo, metallic);
 
 	vec3 R = reflect(-V, N);
-	const float MAX_REFLECTION_LOD = 9.f;
+	const float MAX_REFLECTION_LOD = 4.f;
 
 	vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.f));
 
@@ -306,10 +293,20 @@ void main() {
 
 	vec3 ambient = (kD * diffuse + specular) * ao;
 
-	vec4 finalColor = calcDirectionalLights() + calcPointLights() + calcSpotLights();
+	vec4 finalColor = calcDirectionalLights();
+
+	if (calcShadows)
+		finalColor *= calculateDirectionalShadow();
+
+	finalColor += calcPointLights() + calcSpotLights();
 
 	finalColor += vec4(ambient, 1.f);
 	finalColor += vec4(emissive, 0.f);
+
+	//vec4 finalColor = calcDirectionalLights() + calcPointLights() + calcSpotLights();
+
+	//finalColor += vec4(ambient, 1.f);
+	//finalColor += vec4(emissive, 0.f);
 
 	//finalColor = gammaCorrected ? pow(finalColor, vec4(1.f / gamma)) : finalColor;
 

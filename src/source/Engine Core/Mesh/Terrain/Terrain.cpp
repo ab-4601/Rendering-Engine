@@ -8,13 +8,15 @@ Terrain::Terrain(int rows, int cols, int maxAmplitude, int maxPersistence,
 	maxRandomSeed{ maxRandomSeed }, maxOctaves{ maxOctaves }
 {
 	noise.setOctaves(5);
+
+	strips = rows - 1;
+	verticesPerStrip = cols * 2;
 }
 
 void Terrain::generateIndices() {
 	int num_of_points = rows * cols;
 
-	for (int i = 0; i < num_of_points; i++)
-	{
+	for (int i = 0; i < num_of_points; i++) {
 		if ((i + 1) % cols == 0)
 			continue;
 
@@ -173,4 +175,31 @@ void Terrain::generateTerrain(float scale) {
 	generateIndices();
 	generateVertexNormals();
 	generateTexCoords();
+}
+
+void Terrain::genearteTerrainFromHeightMap(const std::string& filePath) {
+	int width{}, height{}, nChannels{};
+	unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nChannels, 0);
+
+	rows = height; cols = width;
+
+	strips = height - 1;
+	verticesPerStrip = width * 2;
+
+	float yScale = 64.f / 256.f, yShift = 16.f;
+
+	Vertex currVertex;
+
+	for (int i = 0; i < height; i++) {
+		for (int j = 0; j < width; j++) {
+			unsigned char* texel = data + (j + width * i) * nChannels;
+			unsigned char y = texel[0];
+
+			currVertex.position.x = float(-height / 2.f + i);
+			currVertex.position.y = float((int)y * yScale - yShift);
+			currVertex.position.z = float(-width / 2.f + j);
+		}
+	}
+
+	stbi_image_free(data);
 }

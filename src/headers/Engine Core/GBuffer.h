@@ -40,12 +40,11 @@ public:
 			return;
 		}
 
-		clearBuffers();
 		_init(width, height);
 	}
 
 	void updateWireframeBool(bool drawWireframe) { this->drawWireframe = drawWireframe; }
-	void updateBuffer(Shader& outlineShader, int meshID, uint32_t currFramebuffer = 0);
+	void updateBuffer(Shader& outlineShader, glm::ivec2 meshDrawData, uint32_t currFramebuffer = 0);
 
 	~GBuffer() {
 		clearBuffers();

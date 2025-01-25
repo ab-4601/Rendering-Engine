@@ -8,7 +8,7 @@
 
 class CascadedShadows {
 private:
-	static const int mapResolution = 2048;
+	static const int mapResolution = 1024;
 	static const uint32_t numCascades = 4;
 
 	uint32_t FBO{ 0 }, SSBO{ 0 };

@@ -17,6 +17,8 @@ private:
 	int frequencyDivisor, persistenceDivisor;
 	int maxRandomSeed, maxOctaves;
 
+	int strips = 0, verticesPerStrip = 0;
+
 	std::vector<std::vector<float>> heightMaps;
 
 	void generateIndices();
@@ -28,9 +30,8 @@ public:
 		int maxRandomSeed = 10, int maxOctaves = 10);
 
 	void generateHeightMaps(int noOfMaps);
+	void genearteTerrainFromHeightMap(const std::string& filePath);
 	void generateTerrain(float scale = 1.f);
-
-	inline void setScale(float scale) { this->scale = scale; }
 
 	void generateVertexNormals();
 

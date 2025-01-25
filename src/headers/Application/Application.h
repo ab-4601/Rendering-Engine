@@ -4,12 +4,10 @@
 #pragma once
 
 #include "../Engine Core/Skybox.h"
-#include "../Engine Core/GBuffer.h"
 #include "../Engine Core/Editor/Overlay.h"
 #include "../Engine Core/Lights/SpotLight.h"
 #include "../Engine Core/Mesh/Geometry/Cube.h"
 #include "../Engine Core/Mesh/Terrain/Terrain.h"
-#include "../Engine Core/Post Processing/SSAO.h"
 #include "../Engine Core/Mesh/Geometry/UVSphere.h"
 #include "../Engine Core/Mesh/Geometry/Icosphere.h"
 #include "../Engine Core/Shadows/CascadedShadows.h"
@@ -25,6 +23,7 @@ class Application {
 private:
     float deltaTime = 0.f, lastTime = 0.f;
     float currTime = 0.f, prevTime = 0.f, elapsedTime = 0.f;
+    float frameRateCap = 0.f;
 
     glm::mat4 viewportMatrix{ 1.f };
     glm::vec2 mouseCoords{ 0.f };
@@ -32,12 +31,12 @@ private:
     int bufferWidth{ 0 }, bufferHeight{ 0 };
 
     Quad quad;
-    Window window{ };
-    Camera camera{ {-300, 500, 0}, window.getBufferWidth(), window.getBufferHeight() };
-    Skybox skybox{ window.getBufferWidth(), window.getBufferHeight() };
+    Window window{ 1600, 900 };
+    Camera EditorCamera{ {-300, 500, 0}, window.getBufferWidth(), window.getBufferHeight() };
+    Skybox skybox{ window.getBufferWidth(), window.getBufferHeight(), "src/Content/Textures/skybox/kloofendal_48d_partly_cloudy_puresky_4k.hdr" };
     DirectionalLight skylight{ 0.1f, 0.5f, { 4000.f, 4000.f, 0.f }, { 1.f, 1.f, 1.f } };
     LightSources lightSources;
-    CascadedShadows csm{ window.getBufferWidth(), window.getBufferHeight(), 0.5f, 10, 10, 10 };
+    CascadedShadows csm{ window.getBufferWidth(), window.getBufferHeight(), 0.5f, 20, 10, 10 };
 
     std::vector<PointLight*> pointLights{ ::MAX_POINT_LIGHTS, nullptr };
     std::vector<SpotLight*> spotLights{ ::MAX_SPOT_LIGHTS, nullptr };
@@ -47,13 +46,13 @@ private:
 
     Shader forwardShader{ "src/shaders/PBR_forward.vert", "src/shaders/PBR_forward.frag", "src/shaders/PBR_forward.geom" };
     Shader deferredShader{ "src/shaders/PBR_deferred.vert", "src/shaders/PBR_deferred.frag" };
-    Shader outlineShader{ "src/shaders/highlight.vert", "src/shaders/highlight.frag" };
+    Shader outlineShader{ "src/shaders/outline.vert", "src/shaders/outline.frag" };
 
     void setLightingUniforms(Shader& shader);
     void setGlobalPBRUniforms(Shader& shader);
 
-    void mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection);
-    void mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition, glm::vec3& lightDirection);
+    void mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition);
+    void mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition);
 
 public:
     Application();

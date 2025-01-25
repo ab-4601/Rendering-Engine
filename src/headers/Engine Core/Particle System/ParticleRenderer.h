@@ -30,7 +30,7 @@ private:
 	uint32_t VAO, VBO, IBO;
 	uint32_t iVBO;
 
-	Shader shader{ "src/shaders/particle.vert", "src/shaders/particle.frag", "src/shaders/particle.geom" };
+	Shader shader{ "src/shaders/particle.vert", "src/shaders/particle.frag" };
 	ParticleTexture texture;
 
 	glm::vec2 texOffset1;

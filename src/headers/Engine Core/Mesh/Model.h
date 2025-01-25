@@ -11,11 +11,13 @@
 class Model : public Mesh {
 protected:
 	static uint32_t modelCount;
+	uint32_t modelID;
 
 	std::string texFolderPath;
 	std::vector<Texture*> diffuseTextures;
 	std::vector<Texture*> normalTextures;
-	std::vector<Texture*> heightTextures;
+	std::vector<Texture*> roughnessTextures;
+	std::vector<Texture*> occlusionTextures;
 	std::vector<Texture*> metalnessTextures;
 	std::vector<Texture*> emissiveTextures;
 
@@ -28,6 +30,11 @@ protected:
 	void _updateIndirectBuffer();
 	void _loadMaterialMap(const aiScene* const scene, std::vector<Texture*>& maps, aiTextureType textureType) const;
 
+	void loadModel(
+		std::string fileName, aiTextureType diffuseMap, aiTextureType normalMap,
+		aiTextureType metallicMap, aiTextureType roughnessMap, aiTextureType occlusionMap, aiTextureType emissiveMap
+	);
+
 public:
 	static std::vector<Model*> modelList;
 
@@ -35,12 +42,13 @@ public:
 		aiTextureType diffuseMap = aiTextureType_DIFFUSE,
 		aiTextureType normalMap = aiTextureType_NORMALS,
 		aiTextureType metallicMap = aiTextureType_METALNESS,
+		aiTextureType roughnessMap = aiTextureType_DIFFUSE_ROUGHNESS,
+		aiTextureType occlusionMap = aiTextureType_AMBIENT_OCCLUSION,
 		aiTextureType emissiveMap = aiTextureType_EMISSIVE,
-		bool isStrippedNormal = false, bool hasEmissiveMaterial = false
+		bool isStrippedNormal = false, bool hasEmissiveMaterial = false, bool isPackedMap = true
 	);
 
-	void loadModel(std::string fileName, aiTextureType diffuseMap,
-		aiTextureType normalMap, aiTextureType metallicMap, aiTextureType emissiveMap);
+	uint32_t getModelID() const { return modelID; }
 
 	void drawModel(GLenum renderMode = GL_TRIANGLES);
 	void renderModel(Shader& shader, GLenum renderMode = GL_TRIANGLES);

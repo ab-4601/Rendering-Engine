@@ -11,7 +11,7 @@ private:
 	BloomFBO mFBO;
 
 	uint32_t intermediateFBO{ 0 }, screenBuffer{ 0 };
-	float knee{ 1.f };
+	float threshold{ 0.f };
 
 	glm::ivec4 srcViewportSize{ 0 };
 	glm::vec2 srcViewportSizeFLT{ 0.f };
@@ -42,7 +42,7 @@ public:
 		mFBO.resize(viewportDimensions.z, viewportDimensions.w);
 	}
 
-	void setKnee(float knee) { this->knee = (knee < 0.f) ? 0.f : knee; }
+	void setThreshold(float threshold) { this->threshold = (threshold < 0.f) ? 0.f : threshold; }
 
 	bool _init(int windowWidth, int windowHeight);
 	void renderBloomTexture(uint32_t srcTexture, float filterRadius, uint32_t currFramebuffer = 0);

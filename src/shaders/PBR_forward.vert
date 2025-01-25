@@ -24,12 +24,14 @@ uniform mat4 model;
 uniform vec3 color;
 
 void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-        
+    mat3 normalMat = transpose(inverse(mat3(model)));
+
     data_out.color = vec4(color, 1.f);
     data_out.texel = texel;
     data_out.fragPos = model * vec4(aPos, 1.0);
     data_out.drawID = gl_DrawID;
-    data_out.normal = mat3(transpose(inverse(model))) * normal;
-	data_out.tangent = mat3(transpose(inverse(model))) * tangent;
+    data_out.normal = normalMat * normal;
+	data_out.tangent = normalMat * tangent;
+
+    gl_Position = projection * view * data_out.fragPos;
 }

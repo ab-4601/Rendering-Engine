@@ -64,8 +64,8 @@ public:
 			_initIntermediateFBO(viewportDimensions.z, viewportDimensions.w);
 	}
 
-	void postProcessingPass(bool applyBloom, float knee, float filterRadius, float exposure);
-	void postProcessingPassMSAA(bool applyBloom, float knee, float filterRadius, float exposure);
+	void postProcessingPass(bool applyBloom, float threshold, float knee, float filterRadius, float exposure);
+	void postProcessingPassMSAA(bool applyBloom, float threshold, float knee, float filterRadius, float exposure);
 
 	void blitToDefaultFramebuffer() const {
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, FBO);

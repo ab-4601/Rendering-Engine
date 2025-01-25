@@ -1,11 +1,18 @@
 #include "../../headers/Engine Core/GBuffer.h"
 
 GBuffer::GBuffer(int windowWidth, int windowHeight) {
+	glGenFramebuffers(1, &FBO);
+	glGenRenderbuffers(1, &RBO);
+
+	glGenTextures(1, &gPosition);
+	glGenTextures(1, &gNormal);
+	glGenTextures(1, &gAlbedo);
+	glGenTextures(1, &gMetallic);
+
 	_init(windowWidth, windowHeight);
 }
 
 void GBuffer::genTexture(uint32_t& texID, GLenum colorAttachment, int windowWidth, int windowHeight) {
-	glGenTextures(1, &texID);
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, windowWidth, windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -38,7 +45,6 @@ void GBuffer::_init(int windowWidth, int windowHeight) {
 	shader.setMat4("viewportMatrix", viewportMatrix);
 	shader.endShader();
 
-	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	genTexture(gPosition, GL_COLOR_ATTACHMENT0, windowWidth, windowHeight);
@@ -48,7 +54,6 @@ void GBuffer::_init(int windowWidth, int windowHeight) {
 
 	glDrawBuffers(4, colorAttachments);
 
-	glGenRenderbuffers(1, &RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
@@ -64,7 +69,7 @@ void GBuffer::_init(int windowWidth, int windowHeight) {
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 }
 
-void GBuffer::updateBuffer(Shader& outlineShader, int meshId, uint32_t currFramebuffer) {
+void GBuffer::updateBuffer(Shader& outlineShader, glm::ivec2 meshDrawData, uint32_t currFramebuffer) {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glDrawBuffers(4, colorAttachments);
 
@@ -73,19 +78,30 @@ void GBuffer::updateBuffer(Shader& outlineShader, int meshId, uint32_t currFrame
 	shader.useShader();
 	shader.setUint("drawWireframe", drawWireframe);
 
-	if (meshId < Mesh::meshList.size() && meshId != -1)
-		Mesh::meshList[meshId]->renderMeshWithOutline(shader, outlineShader, GL_TRIANGLES);
+	if (meshDrawData.x != -1) {
+		if ((bool)meshDrawData.y == false && meshDrawData.x < (int)Mesh::meshList.size())
+			Mesh::meshList[meshDrawData.x]->renderMeshWithOutline(shader, outlineShader);
 
-	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
-		if (i != meshId)
-			Mesh::meshList[i]->renderMesh(shader, GL_TRIANGLES);
+		else if ((bool)meshDrawData.y == true && meshDrawData.x < (int)Model::modelList.size())
+			Model::modelList[meshDrawData.x]->renderModelWithOutline(shader, outlineShader);
 	}
 
-	for (size_t i = 0; i < Model::modelList.size(); i++)
+	for (size_t i = 0; i < Mesh::meshList.size(); i++) {
+		if ((int)i == meshDrawData.x && meshDrawData.y == false)
+			continue;
+
+		Mesh::meshList[i]->renderMesh(shader, GL_TRIANGLES);
+	}
+
+	for (size_t i = 0; i < Model::modelList.size(); i++) {
+		if ((int)i == meshDrawData.x && (bool)meshDrawData.y == true)
+			continue;
+
 		Model::modelList[i]->renderModel(shader, GL_TRIANGLES);
+	}
 
 	shader.endShader();
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, currFramebuffer);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 }

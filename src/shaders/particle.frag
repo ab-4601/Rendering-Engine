@@ -2,8 +2,8 @@
 
 out vec4 fragColor;
 
-in GS_OUT {
-	vec4 color;
+in VS_OUT {
+	vec3 color;
 	vec2 texCoord1;
 	vec2 texCoord2;
 	float blend;
@@ -12,7 +12,7 @@ in GS_OUT {
 uniform sampler2D textureSampler;
 
 void main() {
-	//fragColor = fs_in.color;
+	//fragColor = vec4(fs_in.color, 1.f);
 	vec4 texColor1 = texture2D(textureSampler, fs_in.texCoord1);
 	vec4 texColor2 = texture2D(textureSampler, fs_in.texCoord2);
 

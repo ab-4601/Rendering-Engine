@@ -159,6 +159,12 @@
     <ClCompile Include="External Libs\imGUI\ImSequencer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\source\Engine Core\LightProbe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="External Libs\GLAD\src\glad.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\headers\Engine Core\Window.h">
@@ -339,6 +345,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="External Libs\imGUI\ImZoomSlider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Engine Core\LightProbe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -14,8 +14,7 @@ struct Vertex {
 	Vertex(
 		glm::vec3 position = glm::vec3(0.f), glm::vec2 texel = glm::vec2(0.f),
 		glm::vec3 normal = glm::vec3(0.f), glm::vec3 tangent = glm::vec3(0.f)
-	) : position{ position }, texel{ texel }, normal{ normal }, tangent{ tangent } {
-	}
+	) : position{ position }, texel{ texel }, normal{ normal }, tangent{ tangent } { }
 };
 
 struct MeshMetaData {
@@ -39,16 +38,17 @@ struct RenderData3D {
 	uint64_t normalMap = 0;
 	uint64_t metallicMap = 0;
 	uint64_t emissiveMap = 0;
+	uint64_t roughnessMap = 0;
+	uint64_t occlusionMap = 0;
 };
 
 class Mesh {
 protected:
 	static uint32_t meshCount;
-	uint32_t objectID{ 0 };
+	uint32_t meshID{ 0 };
 
 	glm::vec3 color{ 1.f };
 	glm::mat4 model{ 1.f };
-	glm::mat4 outlineModel{ 1.f };
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
@@ -67,7 +67,7 @@ protected:
 
 	Texture* diffuseMap = nullptr;
 	Texture* normalMap = nullptr;
-	Texture* depthMap = nullptr;
+	Texture* emissiveMap = nullptr;
 	Texture* metallicMap = nullptr;
 	Texture* roughnessMap = nullptr;
 
@@ -79,6 +79,7 @@ protected:
 	bool drawIndexed{ true };
 	bool calcShadows{ false };
 	bool enableSSAO{ false };
+	bool packedMaterialMap{ true };
 
 public:
 	static std::vector<Mesh*> meshList;
@@ -96,7 +97,7 @@ public:
 
 	glm::mat4& getModelMatrix() { return model; }
 	glm::vec3 getColor() const { return color; }
-	uint32_t getObjectID() const { return objectID; }
+	uint32_t getObjectID() const { return meshID; }
 	float getMetallic() const { return metallic; }
 	float getRoughness() const { return roughness; }
 	float getAO() const { return ao; }
@@ -112,6 +113,7 @@ public:
 	void setNormalMap(Texture* materialMap) { normalMap = materialMap; }
 	void setMetallicMap(Texture* materialMap) { metallicMap = materialMap; }
 	void setRoughnessMap(Texture* materialMap) { roughnessMap = materialMap; }
+	void setEmissiveMap(Texture* materialMap) { emissiveMap = materialMap; }
 
 	void bindDiffuseMap() const { diffuseMap->useTexture(GL_TEXTURE0); }
 	void bindNormalMap() const { normalMap->useTexture(GL_TEXTURE1); }
@@ -120,7 +122,6 @@ public:
 
 	void setModelMatrix(const glm::mat4& matrix) { this->model = matrix; }
 	void setColor(glm::vec3 color) { this->color = color; }
-	void setObjectID(int objectID) { this->objectID = objectID; }
 	void setShadowBoolUniform(bool calcShadows) { this->calcShadows = calcShadows; }
 	void setSSAOboolUniform(bool enableSSAO) { this->enableSSAO = enableSSAO; }
 

@@ -34,6 +34,5 @@ void main() {
 	data_out.tangent = normalMat * aTangent;
 
 	data_out.color = color;
-
 	gl_Position = projection * view * worldPos;
 }

@@ -103,8 +103,7 @@ void ParticleRenderer::setTextureOffset(glm::vec2& offset, int index) {
 	offset.y = (float)row / texture.getNumberOfRows();
 }
 
-inline void ParticleRenderer::updateModelViewMatrix(mat4& modelView, mat4& view, vec3 position,
-	float rotation, float scale) {
+void ParticleRenderer::updateModelViewMatrix(mat4& modelView, mat4& view, vec3 position, float rotation, float scale) {
 
 	modelView = translate(modelView, position);
 

@@ -45,7 +45,7 @@ class Texture {
 protected:
 	uint32_t textureID{ 0 };
 	uint64_t textureHandle{ 0 };
-	int width{ 0 }, height{ 0 }, bitDepth{ 0 };
+	int width{ 0 }, height{ 0 }, nChannels{ 0 };
 
 	std::string fileLocation{ "" };
 	bool isCompressed = false;
@@ -75,7 +75,7 @@ public:
 
 	int getWidth() const { return width; }
 	int getHeight() const { return height; }
-	int getBitDepth() const { return bitDepth; }
+	int getNumChannels() const { return nChannels; }
 
 	~Texture();
 };

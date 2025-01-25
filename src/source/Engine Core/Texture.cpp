@@ -37,8 +37,6 @@ Texture& Texture::operator=(Texture&& rhs) noexcept {
 }
 
 bool Texture::loadDDSTexture() {
-	if (!glewIsSupported("GL_EXT_texture_compression_s3tc")) return false;
-
 	std::ifstream file(fileLocation, std::ios::binary);
 	if (!file.is_open()) {
 		std::cerr << "Invalid file location : " << fileLocation << ". Error opening file" << std::endl;
@@ -124,10 +122,10 @@ bool Texture::loadDDSTexture() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	GLfloat maxAnisotropy = 0.f;
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 
 	if (maxAnisotropy > 0.f) {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(8.f, maxAnisotropy));
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, std::min(8.f, maxAnisotropy));
 	}
 
 	buffer.clear();
@@ -136,7 +134,7 @@ bool Texture::loadDDSTexture() {
 }
 
 bool Texture::loadTexture() {
-	unsigned char* texData = stbi_load(fileLocation.c_str(), &width, &height, &bitDepth, 0);
+	unsigned char* texData = stbi_load(fileLocation.c_str(), &width, &height, &nChannels, 0);
 
 	if (!texData) {
 		std::cerr << "Invalid file location : " << fileLocation << ". Error loading file" << std::endl;
@@ -144,9 +142,12 @@ bool Texture::loadTexture() {
 	}
 
 	GLenum format;
-	switch (bitDepth) {
+	switch (nChannels) {
 	case 1:
 		format = GL_RED;
+		break;
+	case 2:
+		format = GL_RG;
 		break;
 	case 3:
 		format = GL_RGB;
@@ -155,7 +156,8 @@ bool Texture::loadTexture() {
 		format = GL_RGBA;
 		break;
 	default:
-		std::cerr << "Invalid format" << std::endl;
+		std::cerr << "Invalid format: " << nChannels << std::endl;
+		stbi_image_free(texData);
 		return false;
 	}
 
@@ -169,10 +171,10 @@ bool Texture::loadTexture() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	GLfloat maxAnisotropy = 0.f;
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 
 	if (maxAnisotropy > 0.f) {
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, std::min(8.f, maxAnisotropy));
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, std::min(8.f, maxAnisotropy));
 	}
 
 	stbi_image_free(texData);
@@ -180,12 +182,7 @@ bool Texture::loadTexture() {
 	return true;
 }
 
-bool Texture::makeBindless() {
-	if (!glewIsSupported("GL_ARB_bindless_texture")) {
-		std::cerr << "Bindless textures not supported" << std::endl;
-		return false;
-	}
-
+bool Texture::makeBindless() {	
 	textureHandle = glGetTextureHandleARB(textureID);
 	glMakeTextureHandleResidentARB(textureHandle);
 
@@ -203,7 +200,7 @@ void Texture::clearTexture() {
 	textureID = 0;
 	width = 0;
 	height = 0;
-	bitDepth = 0;
+	nChannels = 0;
 	fileLocation = "";
 }
 

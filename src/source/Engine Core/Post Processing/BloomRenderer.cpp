@@ -12,7 +12,7 @@ void BloomRenderer::renderDownsamples(uint32_t srcTexture) {
 	downsampleShader.setInt("srcTexture", 0);
 	downsampleShader.setVec2("srcResolution", srcViewportSizeFLT);
 	downsampleShader.setInt("mipLevel", 0);
-	downsampleShader.setFloat("bloomThreshold", knee);
+	downsampleShader.setFloat("bloomThreshold", threshold);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, srcTexture);

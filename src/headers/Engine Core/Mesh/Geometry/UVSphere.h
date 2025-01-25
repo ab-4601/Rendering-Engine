@@ -3,7 +3,7 @@
 
 #include "../Mesh.h"
 
-class UVSphere : public Mesh {
+class UVSphere final : public Mesh {
 private:
 	float radius;
 

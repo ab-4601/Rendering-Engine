@@ -4,7 +4,7 @@ uint32_t Mesh::meshCount = 0;
 std::vector<Mesh*> Mesh::meshList{};
 
 Mesh::Mesh(GLenum windingOrder) : windingOrder{ windingOrder } {
-	objectID = meshCount++;
+	meshID = meshCount++;
 	meshList.push_back(this);
 
 	vertices.clear();
@@ -14,8 +14,7 @@ Mesh::Mesh(GLenum windingOrder) : windingOrder{ windingOrder } {
 	renderData.clear();
 }
 
-void Mesh::loadMesh(bool useDiffuseMap, bool drawIndexed, bool useNormalMap, bool useMaterialMap,
-	bool useEmissiveMap, bool isStrippedNormal)
+void Mesh::loadMesh(bool useDiffuseMap, bool drawIndexed, bool useNormalMap, bool useMaterialMap, bool useEmissiveMap, bool isStrippedNormal)
 {
 	this->useDiffuseMap = useDiffuseMap;
 	this->useNormalMap = useNormalMap;
@@ -80,6 +79,21 @@ void Mesh::drawMesh(GLenum renderMode) {
 }
 
 void Mesh::renderMesh(Shader& shader, GLenum renderMode) {
+	if (diffuseMap != nullptr)
+		shader.setTexture("diffuseMap", diffuseMap->getTextureHandle());
+
+	if (normalMap != nullptr)
+		shader.setTexture("normalMap", normalMap->getTextureHandle());
+
+	if (roughnessMap != nullptr)
+		shader.setTexture("roughnessMap", roughnessMap->getTextureHandle());
+
+	if (emissiveMap != nullptr)
+		shader.setTexture("emissiveMap", emissiveMap->getTextureHandle());
+
+	if (metallicMap != nullptr)
+		shader.setTexture("metallicMap", metallicMap->getTextureHandle());
+
 	shader.setMat4("model", model);
 	shader.setVec3("color", color);
 
@@ -93,6 +107,7 @@ void Mesh::renderMesh(Shader& shader, GLenum renderMode) {
 	shader.setUint("strippedNormalMap", strippedNormalMap);
 	shader.setUint("useMaterialMap", useMaterialMap);
 	shader.setUint("useEmissiveMap", useEmissiveMap);
+	shader.setUint("isModel", false);
 
 	drawMesh(renderMode);
 }
@@ -113,8 +128,7 @@ void Mesh::renderMeshWithOutline(Shader& shader, Shader& outlineShader, GLenum r
 
 	outlineShader.useShader();
 
-	outlineModel = glm::scale(model, glm::vec3(1.04f));
-	outlineShader.setMat4("model", outlineModel);
+	outlineShader.setMat4("model", glm::scale(model, glm::vec3(1.04f)));
 
 	drawMesh(renderMode);
 
@@ -134,7 +148,7 @@ void Mesh::clearMesh() {
 
 	delete diffuseMap;
 	delete normalMap;
-	delete depthMap;
+	delete emissiveMap;
 	delete roughnessMap;
 	delete metallicMap;
 

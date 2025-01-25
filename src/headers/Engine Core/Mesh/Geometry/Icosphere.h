@@ -3,7 +3,7 @@
 
 #include "../Mesh.h"
 
-class Icosphere : public Mesh {
+class Icosphere final : public Mesh {
 private:
 	std::vector<uint32_t> tempIndices;
 

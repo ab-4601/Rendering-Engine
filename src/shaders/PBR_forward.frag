@@ -69,6 +69,13 @@ layout (binding = 4) uniform samplerCube pointShadowMap;
 layout (binding = 5) uniform sampler2DArray cascadedShadowMap;
 layout (binding = 6) uniform sampler3D randomOffsets;
 
+uniform sampler2D diffuseMap;
+uniform sampler2D normalMap;
+uniform sampler2D metallicMap;
+uniform sampler2D roughnessMap;
+uniform sampler2D occlusionMap;
+uniform sampler2D emissiveMap;
+
 uniform bool useDiffuseMap;
 uniform bool useNormalMap;
 uniform bool strippedNormalMap;
@@ -78,9 +85,12 @@ uniform bool calcShadows;
 uniform bool enableSSAO;
 uniform bool drawWireframe;
 uniform bool gammaCorrected;
+uniform bool isModel;
+uniform bool isPackedMaterialMap;
 
 uniform float nearPlane;
 uniform float farPlane;
+uniform float emissiveIntensity;
 uniform int cascadeCount;
 uniform float cascadePlanes[MAX_CASCADES];
 uniform float radius;
@@ -102,6 +112,8 @@ struct RenderData3D {
     uint64_t normalMap;
     uint64_t metallicMap;
     uint64_t emissiveMap;
+	uint64_t roughnessMap;
+	uint64_t occlusionMap;
 };
 
 layout (std430, binding = 2) readonly buffer renderItems {
@@ -232,11 +244,11 @@ vec4 calculateLighting(Light light, vec3 direction) {
 	L = normalize(direction);
 	H = normalize(V + L);
 
-	vec3 Lo = vec3(0.f);
+	vec3 lightOutgoing = vec3(0.f);
 
 	float NDF = DistributionGGX();
 	float G = GeometrySmith();
-	vec3 F = fresnelSchlick(max(dot(H, V), 0.f));
+	vec3 F = fresnelSchlickRoughness(max(dot(H, V), 0.f));
 
 	vec3 kS = F;
 	vec3 kD = 1.f - kS;
@@ -247,9 +259,9 @@ vec4 calculateLighting(Light light, vec3 direction) {
 	vec3 specular = numerator / denominator;
 
 	float NdotL = max(dot(N, L), 0.f);
-	Lo = (kD * albedo / PI + specular) * light.color * NdotL;
+	lightOutgoing = (kD * albedo / PI + specular) * light.color * NdotL;
 
-	return vec4(Lo, 1.f);
+	return vec4(lightOutgoing, 1.f);
 }
 
 float linearizeDepth(float depth) {
@@ -307,20 +319,29 @@ vec4 calcSpotLights() {
 }
 
 void main() {
-	if(useDiffuseMap) {
-		vec4 texColor = texture2D(sampler2D(renderData[data_in.drawID].diffuseMap), data_in.texel);
+	if (useDiffuseMap) {
+		vec4 texColor = vec4(0.f);
+		if (isModel)
+			texColor = texture2D(sampler2D(renderData[data_in.drawID].diffuseMap), data_in.texel);
+		else
+			texColor = texture2D(diffuseMap, data_in.texel);
+
 		if(texColor.a < 0.1f)
 			discard;
 
 		albedo = texColor.rgb;
 	}
 
-	if(useNormalMap) {
+	if (useNormalMap) {
 		//texel = parallaxMapping(data_in.texel, eyePosition - vec3(data_in.fragPos));
-		N = texture2D(sampler2D(renderData[data_in.drawID].normalMap), data_in.texel).rgb;
+		if (isModel)
+			N = texture2D(sampler2D(renderData[data_in.drawID].normalMap), data_in.texel).rgb;
+		else
+			N = texture2D(normalMap, data_in.texel).rgb;
+
 		N = normalize(N * 2.f - 1.f);
 
-		if(strippedNormalMap)
+		if (strippedNormalMap)
 			N *= -1.f;
 		
 		vec3 tangent = normalize(data_in.tangent);
@@ -332,26 +353,51 @@ void main() {
 		N = normalize(mat3(tangent, biTangent, normal) * N);
 	}
 
-	if(useMaterialMap) {
-		ao = 0.3f;
-		roughness = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).g;
-		metallic = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).b;
+	if (useMaterialMap) {
+		if (isPackedMaterialMap) {
+			ao = 0.3f;
+			if (isModel) {
+				roughness = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).g;
+				metallic = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).b;
+			}
+			else {
+				roughness = texture2D(metallicMap, data_in.texel).g;
+				metallic = texture2D(metallicMap, data_in.texel).b;
+			}
+		}
+		else {
+			//ao = texture2D(sampler2D(renderData[data_in.drawID].occlusionMap), data_in.texel).r;
+			ao = 0.3f;
+			if (isModel) {
+				roughness = texture2D(sampler2D(renderData[data_in.drawID].roughnessMap), data_in.texel).r;
+				metallic = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).r;
+			}
+			else {
+				roughness = texture2D(roughnessMap, data_in.texel).r;
+				metallic = texture2D(roughnessMap, data_in.texel).r;
+			}
+		}
 	}
 
-	if(useEmissiveMap) {
-		emissive = texture2D(sampler2D(renderData[data_in.drawID].emissiveMap), data_in.texel).rgb;
+	if (useEmissiveMap) {
+		if (isModel)
+			emissive = texture2D(sampler2D(renderData[data_in.drawID].emissiveMap), data_in.texel).rgb;
+		else
+			emissive = texture2D(emissiveMap, data_in.texel).rgb;
+
+		emissive *= emissiveIntensity;
 	}
 
 	F0 = mix(F0, albedo, metallic);
 
 	vec3 R = reflect(-V, N);
-	const float MAX_REFLECTION_LOD = 9.f;
+	const float MAX_REFLECTION_LOD = 4.f;
 
 	vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.f));
 
 	vec3 kS = F;
-	vec3 kD = 1.f - kS;
-	kD *= 1.f - metallic;
+	//vec3 kD = 1.f - kS;
+	//kD *= 1.f - metallic;
 
 	vec3 irradiance = texture(irradianceMap, N).rgb;
 	vec3 diffuse = irradiance * albedo;
@@ -360,11 +406,23 @@ void main() {
 	vec2 envBRDF = texture2D(brdfLUT, vec2(max(dot(N, V), 0.f), roughness)).rg;
 	vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
-	vec3 ambient = (kD * diffuse + specular) * ao;
+	vec3 FssEss = kS * envBRDF.x + envBRDF.y;
+	float Ess = envBRDF.x + envBRDF.y;
+	float Ems = 1 - Ess;
+
+	vec3 Favg = F0 + (1 - F0) / 21;
+	vec3 Fms = FssEss * Favg / (1 - (1 - Ess) * Favg);
+	
+	vec3 Edss = 1 - (FssEss + Fms * Ems);
+	vec3 kD = albedo * Edss;
+
+	//vec3 ambient = (kD * diffuse + specular) * ao;
+	vec3 ambient = FssEss * specular + (Fms * Ems + kD) * irradiance;
+	ambient *= ao;
 
 	vec4 finalColor = calcDirectionalLights();
 
-	if(calcShadows)
+	if (calcShadows)
 		finalColor *= calculateDirectionalShadow();
 
 	finalColor += calcPointLights() + calcSpotLights();
@@ -372,17 +430,15 @@ void main() {
 	finalColor += vec4(ambient, 1.f);
 	finalColor += vec4(emissive, 0.f);
 
-	//finalColor = gammaCorrected ? pow(finalColor, vec4(1.f / gamma)) : finalColor;
-
 	float d = 0.f, mixVal = 0.f;
 
-	if(drawWireframe) {
+	if (drawWireframe) {
 		d = min(data_in.edgeDistance.x, data_in.edgeDistance.y);
 		d = min(d, data_in.edgeDistance.z);
 
-		if(d < wireframeWidth - 1.f)
+		if (d < wireframeWidth - 1.f)
 			mixVal = 1.f;
-		else if(d > wireframeWidth + 1.f)
+		else if (d > wireframeWidth + 1.f)
 			mixVal = 0.f;
 		else {
 			float x = d - (wireframeWidth - 1.f);

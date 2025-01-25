@@ -46,7 +46,7 @@ public:
 		else
 			_init(width, height);
 	}
-
+	
 	uint32_t FramebufferID() const { return FBO; }
 	uint32_t ColorbufferID() const { return colorBuffer; }
 

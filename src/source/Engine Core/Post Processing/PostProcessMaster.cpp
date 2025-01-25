@@ -176,9 +176,9 @@ void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture) {
 	blendShader.endShader();
 }
 
-void PostProcessMaster::postProcessingPass(bool applyBloom, float knee, float filterRadius, float exposure) {
+void PostProcessMaster::postProcessingPass(bool applyBloom, float threshold, float knee, float filterRadius, float exposure) {
 	if (applyBloom) {
-		bloom.setKnee(knee);
+		bloom.setThreshold(threshold);
 		bloom.renderBloomTexture(HDR::Framebuffer().ColorbufferID(), filterRadius, 0);
 	}
 
@@ -189,6 +189,7 @@ void PostProcessMaster::postProcessingPass(bool applyBloom, float knee, float fi
 
 	shader.setiVec2("screenResolution", glm::ivec2(screenDimensions.z, screenDimensions.w));
 	shader.setFloat("exposure", exposure);
+	shader.setFloat("knee", knee);
 	shader.setUint("enableBloom", applyBloom);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -209,7 +210,7 @@ void PostProcessMaster::postProcessingPass(bool applyBloom, float knee, float fi
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PostProcessMaster::postProcessingPassMSAA(bool applyBloom, float knee, float filterRadius, float exposure) {
+void PostProcessMaster::postProcessingPassMSAA(bool applyBloom, float threshold, float knee, float filterRadius, float exposure) {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, HDR::Framebuffer().FramebufferID());
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
 	glBlitFramebuffer(
@@ -219,7 +220,7 @@ void PostProcessMaster::postProcessingPassMSAA(bool applyBloom, float knee, floa
 	);
 
 	if (applyBloom) {
-		bloom.setKnee(knee);
+		bloom.setThreshold(threshold);
 		bloom.renderBloomTexture(screenBuffer, filterRadius, FBO);
 	}
 
@@ -230,6 +231,7 @@ void PostProcessMaster::postProcessingPassMSAA(bool applyBloom, float knee, floa
 
 	shader.setiVec2("screenResolution", screenDimensions);
 	shader.setFloat("exposure", exposure);
+	shader.setFloat("knee", knee);
 	shader.setUint("enableBloom", applyBloom);
 
 	glActiveTexture(GL_TEXTURE0);

@@ -12,6 +12,8 @@ struct RenderData3D {
     uint64_t normalMap;
     uint64_t metallicMap;
     uint64_t emissiveMap;
+	uint64_t roughnessMap;
+	uint64_t occlusionMap;
 };
 
 layout (std430, binding = 2) readonly buffer renderItems {

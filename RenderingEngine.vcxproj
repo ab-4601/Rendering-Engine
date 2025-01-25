@@ -76,13 +76,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLEW\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLAD\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLEW\lib\Release\x64;$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -93,15 +93,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLEW\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLAD\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLEW\lib\Release\x64;$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -110,13 +110,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLEW\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLAD\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLEW\lib\Release\x64;$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,18 +127,19 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLEW\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)External Libs\GLAD\include;$(SolutionDir)External Libs\GLFW\include;$(SolutionDir)External Libs\GLM;$(SolutionDir)External Libs\Eigen;$(SolutionDir)External Libs\ASSIMP\include;$(SolutionDir)External Libs\imGUI</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLEW\lib\Release\x64;$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)External Libs\GLFW\lib-vc2022;$(SolutionDir)External Libs\ASSIMP\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="External Libs\GLAD\src\glad.c" />
     <ClCompile Include="External Libs\imGUI\GraphEditor.cpp" />
     <ClCompile Include="External Libs\imGUI\ImCurveEdit.cpp" />
     <ClCompile Include="External Libs\imGUI\ImGradient.cpp" />
@@ -156,6 +157,7 @@
     <ClCompile Include="src\source\Engine Core\Entity\ECS.cpp" />
     <ClCompile Include="src\source\Engine Core\GBuffer.cpp" />
     <ClCompile Include="src\source\Engine Core\HDR.cpp" />
+    <ClCompile Include="src\source\Engine Core\LightProbe.cpp" />
     <ClCompile Include="src\source\Engine Core\Mesh\Geometry\Cube.cpp" />
     <ClCompile Include="src\source\Engine Core\Mesh\Geometry\Icosphere.cpp" />
     <ClCompile Include="src\source\Engine Core\Mesh\Geometry\Line.cpp" />
@@ -215,6 +217,7 @@
     <ClInclude Include="src\headers\Engine Core\Entity\Transform.h" />
     <ClInclude Include="src\headers\Engine Core\GBuffer.h" />
     <ClInclude Include="src\headers\Engine Core\HDR.h" />
+    <ClInclude Include="src\headers\Engine Core\LightProbe.h" />
     <ClInclude Include="src\headers\Engine Core\Lights\DirectionalLight.h" />
     <ClInclude Include="src\headers\Engine Core\Lights\Light.h" />
     <ClInclude Include="src\headers\Engine Core\Lights\PointLight.h" />
