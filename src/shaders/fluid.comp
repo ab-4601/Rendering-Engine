@@ -1,0 +1,132 @@
+#version 460 core
+
+layout (local_size_x = 256) in;
+
+const float PI = 3.14159265359;
+
+struct Particle {
+	vec3 position;
+	vec3 velocity;
+	vec3 acceleration;
+	float density;
+	float pressure;
+};
+
+layout (std430, binding = 0) buffer Particles {
+	Particle particles[];
+};
+
+layout (std430, binding = 3) buffer Grid {
+	int grid[];
+};
+
+uniform float h;
+uniform float hsq;
+uniform float mass;
+uniform float restDensity;
+uniform float gasConst;
+uniform float viscosity;
+uniform float dt;
+uniform int gridSize;
+uniform int gridWidth;
+uniform int gridHeight;
+uniform int gridDepth;
+
+uniform vec3 gravity;
+
+float kernel(float r, float h) {
+	float volume = (315.f / 64.f * PI * pow(h, 9));
+	float value = max(0.f, h * h - r * r);
+	return volume * value * value * value;
+}
+
+float kernelGradient(float r, float h) {
+	float scale = -945.f / (32.f * PI * pow(h, 9));
+	return scale * (h - r) * (h - 4);
+}
+
+int getGridCell(vec3 position) {
+	int cellX = int(position.x / h);
+	int cellY = int(position.y / h);
+	int cellZ = int(position.z / h);
+
+	return cellZ * gridWidth * gridHeight + cellY * gridWidth + cellX;
+}
+
+void checkBoundary(inout Particle particle) {
+	if (particle.position.x < 0) { particle.position.x = 0; particle.velocity.x *= -0.5; }
+    if (particle.position.x > 800) { particle.position.x = 800; particle.velocity.x *= -0.5; }
+    if (particle.position.y < 0) { particle.position.y = 0; particle.velocity.y *= -0.5; }
+    if (particle.position.y > 600) { particle.position.y = 600; particle.velocity.y *= -0.5; }
+    if (particle.position.z < 0) { particle.position.z = 0; particle.velocity.z *= -0.5; }
+    if (particle.position.z > 600) { particle.position.z = 600; particle.velocity.z *= -0.5; }
+}
+
+void main() {
+	uint i = gl_GlobalInvocationID.x;
+	if (i >= particles.length()) return;
+
+	Particle currentParticle = particles[i];
+	int cell = getGridCell(currentParticle.position);
+
+	currentParticle.density = 0.f;
+	for(int dx = -1; dx <= 1; dx++) {
+		for(int dy = -1; dy <= 1; dy++) {
+			for(int dz = -1; dz <= 1; dz++) {
+				int neighborCell = cell + dz * gridWidth * gridHeight + dy * gridWidth + dx;
+
+				if(neighborCell < 0 || neighborCell >= gridSize) continue;
+
+				for(int j = 0; j < particles.length(); j++) {
+					if(getGridCell(particles[j].position) != neighborCell) continue;
+
+					vec3 dx = currentParticle.position - particles[j].position;
+					float r2 = dot(dx, dx);
+
+					if(r2 < hsq)
+						currentParticle.density += mass * kernel(sqrt(r2), h);
+				}
+			}
+		}
+	}
+
+	currentParticle.pressure = gasConst * (currentParticle.density - restDensity);
+
+	vec3 force = vec3(0.f);
+	for(int dx = -1; dx <= 1; dx++) {
+		for(int dy = -1; dy <= 1; dy++) {
+			for(int dz = -1; dz <= 1; dz++) {
+				int neighborCell = cell + dz * gridWidth * gridHeight + dy * gridWidth + dx;
+
+				if (neighborCell < 0 || neighborCell >= gridSize) continue;
+
+				for(int j = 0; j < particles.length(); j++) {
+					if(getGridCell(particles[j].position) != neighborCell) continue;
+
+					vec3 dx = currentParticle.position - particles[j].position;
+					float r = length(dx);
+
+					if(r < h) {
+						float gradient = kernelGradient(r, h);
+						float pressureForce = -mass * (currentParticle.pressure + particles[j].pressure) / 
+											   (2.f * particles[j].density) * gradient;
+
+						force += pressureForce * dx / r;
+
+						vec3 viscosityForce = viscosity * mass * (particles[j].velocity - currentParticle.velocity) /
+											  particles[j].density * gradient;
+
+						force += viscosityForce;
+					}
+				}
+			}
+		}
+	}
+
+	currentParticle.acceleration = force - gravity;
+
+	currentParticle.velocity += currentParticle.acceleration * dt;
+	currentParticle.position += currentParticle.velocity * dt;
+
+	checkBoundary(currentParticle);
+}

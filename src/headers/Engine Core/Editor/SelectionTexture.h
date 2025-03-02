@@ -15,7 +15,6 @@ private:
 	uint32_t FBO = 0;
 	uint32_t selectionTexture = 0;
 	uint32_t depthTexture = 0;
-	uint32_t depthBuffer = 0;
 
 	void clearBuffers();
 
@@ -25,7 +24,8 @@ public:
 	void init(int windowWidth, int windowHeight);
 
 	void resize(int width, int height) {
-		if (width == 0 || height == 0) return;
+		width = std::max(1, width);
+		height = std::max(1, height);
 
 		clearBuffers();
 		init(width, height);

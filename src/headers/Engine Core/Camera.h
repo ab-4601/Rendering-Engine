@@ -25,18 +25,26 @@ private:
 	float movementSpeed, turnSpeed, movementSpeedMultiplier, velocity;
 	CameraData cameraData;
 
-	void update();
-	inline void updatePosition(Direction direction, const glm::vec3& directionVector) {
+	void keyFunctionality(const Window& currWindow, float deltaTime);
+	void mouseFunctionality(float xChange, float yChange, float scrollChange);
+
+	void updatePosition(Direction direction, const glm::vec3& directionVector) {
 		cameraData.position += (float)direction * directionVector * velocity;
 	}
 
 public:
-	Camera(glm::vec3 position = glm::vec3(0.f, 0.f, 3.f), int windowWidth = 800, int windowHeight = 600,
-		glm::vec3 worldUpDir = glm::vec3(0.f, 1.f, 0.f), float pitch = 0.f, float yaw = 0.f,
-		float movementSpeed = 200.f, float turnSpeed = 0.1f);
+	Camera() {
+		cameraData.position = glm::vec3(0.f);
+		front = up = right = glm::vec3(0.f);
+		worldUpDir = glm::vec3(0.f, 1.f, 0.f);
+		pitch = yaw = roll = 0.f;
+		movementSpeedMultiplier = 1.f;
+		movementSpeed = turnSpeed = velocity = 0.f;
+	}
 
-	void keyFunctionality(const Window* currWindow, float deltaTime);
-	void mouseFunctionality(float xChange, float yChange, float scrollChange);
+	void init(const Window& window, glm::vec3 position, float movementSpeed = 200.f, float turnSpeed = 0.1f);
+
+	void update(Window& window, float deltaTime);
 
 	float getFOV() const { return fov; }
 	float getNearPlane() const { return nearPlane; }

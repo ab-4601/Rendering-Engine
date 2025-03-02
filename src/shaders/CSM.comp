@@ -71,18 +71,17 @@ mat4 ortho(float left, float right, float bottom, float top, float zNear, float 
 
 void calcFrustumCorners(mat4 projectionMatrix) {
 	int index = 0;
+	vec4 point = vec4(0.f);
 	mat4 invViewProjection = inverse(projectionMatrix * view);
 
 	for(int x = 0; x < 2; x++) {
 		for(int y = 0; y < 2; y++) {
 			for(int z = 0; z < 2; z++) {
-				vec4 point = vec4(2.f * x - 1.f, 2.f * y - 1.f, 2.f * z - 1.f, 1.f);
-
+				point = vec4(2.f * x - 1.f, 2.f * y - 1.f, 2.f * z - 1.f, 1.f);
 				point = invViewProjection * point;
 				point /= point.w;
 
-				frustumCorners[index] = point;
-				++index;
+				frustumCorners[index++] = point;
 			}
 		}
 	}
@@ -124,11 +123,13 @@ void main() {
     for (int i = 0; i < MAX_CASCADES; i++)
         lightSpaceMatrices[i] = mat4(1.0);
 
-    for (int i = 0; i < numCascades; i++) {
-        float zNear = (i == 0) ? nearPlane : cascadeSplits[i - 1];
-        float zFar = cascadeSplits[i];
-        lightSpaceMatrices[i] = calcLightSpaceMatrix(zNear, zFar);
-    }
+	int invocation = int(gl_GlobalInvocationID.x);
 
-    lightSpaceMatrices[numCascades] = calcLightSpaceMatrix(cascadeSplits[numCascades - 1], farPlane);
+	if(invocation != numCascades) {
+		float zNear = (invocation == 0) ? nearPlane : cascadeSplits[invocation - 1];
+		float zFar = cascadeSplits[invocation];
+		lightSpaceMatrices[invocation] = calcLightSpaceMatrix(zNear, zFar);
+	}
+	else
+		lightSpaceMatrices[numCascades] = calcLightSpaceMatrix(cascadeSplits[numCascades - 1], farPlane);
 }

@@ -34,8 +34,8 @@ void Window::setMousePosition(GLFWwindow* window, double xPos, double yPos) {
     currWindow->viewportX = xPos;
     currWindow->viewportY = yPos;
 
-    if (currWindow->getRMBPressed() == true) {
-        glfwSetInputMode(currWindow->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (currWindow->RMBPressed) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         if (currWindow->mouseFirstMoved) {
             currWindow->lastX = (float)xPos;
@@ -50,7 +50,7 @@ void Window::setMousePosition(GLFWwindow* window, double xPos, double yPos) {
         currWindow->lastY = (float)yPos;
     }
     else {
-        glfwSetInputMode(currWindow->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         currWindow->mouseFirstMoved = true;
     }
 }
@@ -66,16 +66,16 @@ void Window::getMouseButton(GLFWwindow* window, int button, int action, int mods
     Window* currWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        currWindow->setLMBPressed(true);
+        currWindow->LMBPressed = true;
 
     else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-        currWindow->setLMBPressed(false);
+        currWindow->LMBPressed = false;
 
     else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-        currWindow->setRMBPressed(true);
+        currWindow->RMBPressed = true;
 
     else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-        currWindow->setRMBPressed(false);
+        currWindow->RMBPressed = false;
 }
 
 void Window::windowFocusCallback(GLFWwindow* window, int focused) {
@@ -112,6 +112,8 @@ void Window::setupWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION::MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION::MINOR);
 
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+
     // Core profile = no backwards compatibility
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_SAMPLES, ::samples);
@@ -125,6 +127,10 @@ void Window::setupWindow() {
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+
+    #ifdef _DEBUG
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    #endif
 
     // Allow forward compatibility
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -151,9 +157,8 @@ void Window::setupWindow() {
     // Lock cursor to window
     //glfwSetInputMode(this->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // Allow modern extension features
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize glad" << std::endl;
+        std::cerr << "GLAD initialization failed. Failed to load OpenGL functions via GLFW." << std::endl;
         glfwDestroyWindow(window);
         glfwTerminate();
         exit(1);
@@ -165,6 +170,8 @@ void Window::setupWindow() {
     glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_POINT_SPRITE);
+    glEnable(GL_PROGRAM_POINT_SIZE);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_LINE_SMOOTH);

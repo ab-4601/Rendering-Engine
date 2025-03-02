@@ -8,8 +8,8 @@ layout (location = 0) out vec4 fragColor;
 
 uniform float gridCellSize = 0.025f;
 uniform float minPixelBetweenCells = 2.f;
-uniform vec4 gridColorThin = vec4(0.04f, 0.04f, 0.04f, 1.f);
-uniform vec4 gridColorThick = vec4(0.f, 0.f, 0.f, 1.f);
+uniform vec4 gridColorThin = vec4(0.5f, 0.5f, 0.5f, 1.f);
+uniform vec4 gridColorThick = vec4(1.f, 1.f, 1.f, 1.f);
 
 float log10(float val) {
 	return log(val) / log(10);

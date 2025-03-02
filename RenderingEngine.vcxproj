@@ -153,6 +153,7 @@
     <ClCompile Include="External Libs\imGUI\imgui_widgets.cpp" />
     <ClCompile Include="External Libs\imGUI\ImSequencer.cpp" />
     <ClCompile Include="src\source\Application\Application.cpp" />
+    <ClCompile Include="src\source\Application\DebugCallback.cpp" />
     <ClCompile Include="src\source\Engine Core\Camera.cpp" />
     <ClCompile Include="src\source\Engine Core\Entity\ECS.cpp" />
     <ClCompile Include="src\source\Engine Core\GBuffer.cpp" />
@@ -186,12 +187,12 @@
     <ClCompile Include="src\source\Engine Core\Texture.cpp" />
     <ClCompile Include="src\source\main.cpp" />
     <ClCompile Include="src\source\Engine Core\Window.cpp" />
+    <ClCompile Include="src\source\Particle System TF\ParticleSystemTF.cpp" />
     <ClCompile Include="src\source\Scene Core\CoordinateSystem.cpp" />
     <ClCompile Include="src\source\Scene Core\Grid.cpp" />
     <ClCompile Include="src\source\Scene Core\LightSources.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="External Libs\GLAD\include\KHR\khrplatform.h" />
     <ClInclude Include="External Libs\imGUI\GraphEditor.h" />
     <ClInclude Include="External Libs\imGUI\imconfig.h" />
     <ClInclude Include="External Libs\imGUI\ImCurveEdit.h" />
@@ -208,6 +209,7 @@
     <ClInclude Include="External Libs\imGUI\imstb_truetype.h" />
     <ClInclude Include="External Libs\imGUI\ImZoomSlider.h" />
     <ClInclude Include="src\headers\Application\Application.h" />
+    <ClInclude Include="src\headers\Application\DebugCallback.h" />
     <ClInclude Include="src\headers\Core Includes\Core.h" />
     <ClInclude Include="src\headers\Core Includes\GLM_Core.h" />
     <ClInclude Include="src\headers\Core Includes\GL_Core.h" />
@@ -249,6 +251,7 @@
     <ClInclude Include="src\headers\Engine Core\Skybox.h" />
     <ClInclude Include="src\headers\Engine Core\Texture.h" />
     <ClInclude Include="src\headers\Engine Core\Window.h" />
+    <ClInclude Include="src\headers\Particle System TF\ParticleSystemTF.h" />
     <ClInclude Include="src\headers\Scene Core\CoordinateSystem.h" />
     <ClInclude Include="src\headers\Scene Core\Grid.h" />
     <ClInclude Include="src\headers\Scene Core\LightSources.h" />

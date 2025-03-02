@@ -148,7 +148,7 @@ void CascadedShadows::calculateShadows(glm::ivec4 viewportDimensions, const glm:
 	computeShader.setVec3("lightDirection", lightPosition);
 	computeShader.setFloat("aspect", (float)viewportDimensions.z / viewportDimensions.w);
 
-	computeShader.dispatchComputeShader(1, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
+	computeShader.dispatchComputeShader(numCascades + 1, 1, 1, GL_SHADER_STORAGE_BARRIER_BIT);
 
 	computeShader.endShader();
 
@@ -158,8 +158,8 @@ void CascadedShadows::calculateShadows(glm::ivec4 viewportDimensions, const glm:
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, mapResolution, mapResolution);
 
-	/*glEnable(GL_POLYGON_OFFSET_FILL);
-	glPolygonOffset(1.f, 1.f);*/
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(1.f, 1.f);
 
 	glEnable(GL_DEPTH_CLAMP);
 	glCullFace(GL_FRONT);
@@ -180,7 +180,7 @@ void CascadedShadows::calculateShadows(glm::ivec4 viewportDimensions, const glm:
 
 	glCullFace(GL_BACK);
 
-	//glDisable(GL_POLYGON_OFFSET_FILL);
+	glDisable(GL_POLYGON_OFFSET_FILL);
 	glDisable(GL_DEPTH_CLAMP);
 
 	this->shader.endShader();

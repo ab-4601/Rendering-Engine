@@ -9,12 +9,11 @@ Application::Application() {
 
     MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
 
-    viewportMatrix = glm::mat4{
-        glm::vec4((float)window.getBufferWidth() / 2.f, 0.f, 0.f, (float)window.getBufferWidth() / 2.f),
-        glm::vec4(0.f, (float)window.getBufferHeight() / 2.f, 0.f, (float)window.getBufferHeight() / 2.f),
-        glm::vec4(0.f, 0.f, 1.f, 0.f),
-        glm::vec4(0.f, 0.f, 0.f, 1.f)
-    };
+    glGenBuffers(1, &Mesh::RenderDataBufferObject);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, Mesh::RenderDataBufferObject);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Mesh::RenderDataBufferObject);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, NULL, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     quad.createQuad();
 }
@@ -82,7 +81,7 @@ void Application::setGlobalPBRUniforms(Shader& shader) {
     shader.setFloat("farPlane", ::far_plane);
     shader.setInt("cascadeCount", csm.getNumCascades());
     shader.setVec3("offsetTexSize", csm.getNoiseTextureSize());
-    shader.setMat4("viewportMatrix", viewportMatrix);
+    shader.setMat4("viewportMatrix", Overlay::Editor().viewportMatrix);
 
     const float* cascadePlanes = csm.cascadePlanes();
 
@@ -160,12 +159,12 @@ void Application::start() {
     cube.setMeshMaterial(0.f, 0.f, 1.f);;
     cube.loadMesh(false, false);
 
-    modelMatrix = glm::mat4(1.f);
+    /*modelMatrix = glm::mat4(1.f);
     modelMatrix = glm::scale(modelMatrix, glm::vec3(5.f, 5.f, 5.f));
 
-    /*Terrain terrain(1000, 1000);
+    Terrain terrain(500, 500, 90);
     terrain.generateHeightMaps(5);
-    terrain.setMeshMaterial(0.f, 1.f, 1.f);
+    terrain.setMeshMaterial(0.f, 0.f, 1.f);
     terrain.generateTerrain();
     terrain.loadMesh();
     terrain.setModelMatrix(modelMatrix);
@@ -202,10 +201,10 @@ void Application::start() {
 
     isometricRoom.setModelMatrix(modelMatrix);*/
 
-    Model sponza(
+    /*Model sponza(
         "src/Content/Models/Sponza/Sponza.gltf",
         "src/Content/Models/Sponza/"
-    );
+    );*/
 
     CoordinateSystem::Widget().createCoordinateSystem();
 
@@ -213,9 +212,11 @@ void Application::start() {
     glm::vec3 particlePosition{ 20.f, 20.f, 20.f }, velocity{ 10.f, 50.f, 10.f }, particleColor{ 1.f, 0.5f, 0.05f };
     ParticleSystem pSystem(particleColor, 10, 15.f, 1.f, 6.f, partTex);
 
-    /*ParticleTexture fire("src/Content/Textures/fire.png", 8.f);
+    ParticleTexture fire("src/Content/Textures/Particle System/fire.png", 8.f);
     glm::vec3 fireParticlePosition{ 1125.f, 120.f, 400.f };
-    ParticleSystem fireSystem(particleColor, 30.f, -30.f, 1.f, 30.f, fire);*/
+    ParticleSystem fireSystem(particleColor, 30, -30.f, 1.f, 30.f, fire);
+
+    Psystem test{ glm::vec3(0.f) };
 
     //HDR::Framebuffer()._init(window.getBufferWidth(), window.getBufferHeight());
     HDR::Framebuffer()._initMSAA(window.getBufferWidth(), window.getBufferHeight());
@@ -224,6 +225,7 @@ void Application::start() {
     //setGlobalPBRUniforms(deferredShader);
 
     glfwSwapInterval(Overlay::Editor().enableVsync);
+    glClearColor(0.4f, 0.4f, 0.4f, 1.f);
 
     while (!glfwWindowShouldClose(window.getGlfwWindow())) {
         glfwPollEvents();
@@ -243,11 +245,10 @@ void Application::start() {
         elapsedTime += deltaTime;
         lastTime = currTime;
 
-        EditorCamera.keyFunctionality(window.getCurrWindow(), deltaTime);
-        EditorCamera.mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
+        Overlay::Editor().EditorCamera.update(window, deltaTime);
 
-        pSystem.updateParticles(deltaTime, EditorCamera.getCameraPosition());
-        //fireSystem.updateParticles(deltaTime, this->EditorCamera.getCameraPosition());
+        pSystem.updateParticles(deltaTime, Overlay::Editor().EditorCamera.getCameraPosition());
+        //fireSystem.updateParticles(deltaTime, Overlay::Editor().EditorCamera.getCameraPosition());
 
         if(elapsedTime >= frameRateCap) {
             if (!Overlay::Editor().enableVsync)
@@ -255,12 +256,13 @@ void Application::start() {
             else
                 frameRateCap = 0;
 
-            mainLoopForward(pSystem, modelMatrix, particlePosition);
+            mainLoopForward(test, modelMatrix, fireParticlePosition);
+            //mainLoopDeferred(pSystem, modelMatrix, fireParticlePosition);
         }
     }
 }
 
-void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition) {
+void Application::mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition) {
     Overlay::Editor().newFrame();
     elapsedTime = 0.f;
 
@@ -292,7 +294,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 
     forwardShader.useShader();
 
-    forwardShader.setMat4("viewportMatrix", viewportMatrix);
+    forwardShader.setMat4("viewportMatrix", Overlay::Editor().viewportMatrix);
 
     setLightingUniforms(forwardShader);
 
@@ -332,19 +334,21 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
 // ----------------------------------------------------------------------------------------------------------------
 
     if (Overlay::Editor().displayCoordinateSystem)
-        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), EditorCamera);
+        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), Overlay::Editor().EditorCamera);
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    particlePosition = EditorCamera.getCameraPosition() + EditorCamera.getFrontVector() * 200.f;
-    //fireSystem.generateParticles(fireParticlePosition, 0.f);
+    /*particlePosition = Overlay::Editor().EditorCamera.getCameraPosition() + 
+                       Overlay::Editor().EditorCamera.getFrontVector() * 200.f;*/
+    //pSystem.generateParticles(particlePosition, 0.f);
 
-    if (window.getKeyPress(GLFW_KEY_R)) {
+    pSystem.render(currTime, 1.f);
+
+    /*if (window.getKeyPress(GLFW_KEY_R)) {
         pSystem.generateParticles(particlePosition, 0.f);
-    }
+    }*/
 
-    pSystem.renderParticles(&window, EditorCamera, modelMatrix);
-    //fireSystem.renderParticles(&this->window, EditorCamera, modelMatrix);
+    //pSystem.renderParticles(&window, Overlay::Editor().EditorCamera, modelMatrix);
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -357,7 +361,7 @@ void Application::mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatri
     else
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    Overlay::Editor().DrawEditorForward(window, EditorCamera, viewportMatrix);
+    Overlay::Editor().DrawEditorForward(window);
     Overlay::Editor().Render(window.getGlfwWindow());
 
     glfwSwapBuffers(window.getMainWindow());
@@ -436,19 +440,18 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 // ----------------------------------------------------------------------------------------------------------------
 
     if (Overlay::Editor().displayCoordinateSystem)
-        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), EditorCamera);
+        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), Overlay::Editor().EditorCamera);
 
 //----------------------------------------------------------------------------------------------------------------
 
-    particlePosition = EditorCamera.getCameraPosition() + EditorCamera.getFrontVector() * 200.f;
-    //fireSystem.generateParticles(fireParticlePosition, 0.f);
+    particlePosition = Overlay::Editor().EditorCamera.getCameraPosition() + 
+                       Overlay::Editor().EditorCamera.getFrontVector() * 200.f;
 
     if (window.getKeyPress(GLFW_KEY_R)) {
         pSystem.generateParticles(particlePosition, 0.f);
     }
 
-    pSystem.renderParticles(&window, EditorCamera, modelMatrix);
-    //fireSystem.renderParticles(&window, EditorCamera, modelMatrix);
+    pSystem.renderParticles(&window, Overlay::Editor().EditorCamera, modelMatrix);
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -461,7 +464,7 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
     else
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    Overlay::Editor().DrawEditorDeferred(window, EditorCamera, viewportMatrix);
+    Overlay::Editor().DrawEditorDeferred(window);
     Overlay::Editor().Render(window.getGlfwWindow());
 
     glfwSwapBuffers(window.getMainWindow());

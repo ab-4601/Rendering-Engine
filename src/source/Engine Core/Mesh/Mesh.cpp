@@ -1,5 +1,6 @@
 #include "../../../headers/Engine Core/Mesh/Mesh.h"
 
+uint32_t Mesh::RenderDataBufferObject = 0;
 uint32_t Mesh::meshCount = 0;
 std::vector<Mesh*> Mesh::meshList{};
 
@@ -30,17 +31,17 @@ void Mesh::loadMesh(bool useDiffuseMap, bool drawIndexed, bool useNormalMap, boo
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+	glEnableVertexAttribArray(AttribLocation::POSITION);
+	glVertexAttribPointer(AttribLocation::POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
 
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texel));
+	glEnableVertexAttribArray(AttribLocation::TEXEL);
+	glVertexAttribPointer(AttribLocation::TEXEL, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texel));
 
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glEnableVertexAttribArray(AttribLocation::NORMAL);
+	glVertexAttribPointer(AttribLocation::NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+	glEnableVertexAttribArray(AttribLocation::TANGENT);
+	glVertexAttribPointer(AttribLocation::TANGENT, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
 
 	if (drawIndexed == true) {
 		glGenBuffers(1, &EBO);

@@ -36,17 +36,14 @@ void ParticleMaster::update(float delta, glm::vec3 cameraPosition) {
 	if (particles.size() == 0)
 		return;
 
-	CParticle* particle = nullptr;
-
 	for (size_t i = 0; i < particles.size(); i++) {
-		particle = particles.at(i);
-		particle->updateDelta(delta);
-		bool stillVisible = particle->update(cameraPosition);
+		particles.at(i)->updateDelta(delta);
+		bool stillVisible = particles.at(i)->update(cameraPosition);
 
 		if (!stillVisible) {
 			auto iterator = particles.begin() + i;
+			delete particles.at(i);
 			particles.erase(iterator);
-			delete particle;
 		}
 	}
 }

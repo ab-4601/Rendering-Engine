@@ -1,17 +1,15 @@
 #include "../../headers/Engine Core/Camera.h"
 
-Camera::Camera(glm::vec3 position, int windowWidth, int windowHeight, glm::vec3 worldUpDir,
-	float pitch, float yaw, float movementSpeed, float turnSpeed) :
-	worldUpDir{ worldUpDir }, pitch{ pitch }, yaw{ yaw }, velocity{ 0.f },
-	movementSpeed{ movementSpeed }, turnSpeed{ turnSpeed }, movementSpeedMultiplier{ 1.f }
-{
+void Camera::init(const Window& window, glm::vec3 position, float movementSpeed, float turnSpeed) {
 	cameraData.position = position;
+	this->turnSpeed = turnSpeed;
+	this->movementSpeed = movementSpeed;
 	velocity = movementSpeed * movementSpeedMultiplier;
 
 	glm::vec3 origin(0.f, 0.f, 0.f);
 	front = glm::normalize(cameraData.position - origin);
-
-	aspect = (float)windowWidth / windowHeight;
+	
+	aspect = (float)window.getBufferWidth() / window.getBufferHeight();
 	nearPlane = ::near_plane; farPlane = ::far_plane;
 	fov = 45.f;
 
@@ -25,28 +23,28 @@ Camera::Camera(glm::vec3 position, int windowWidth, int windowHeight, glm::vec3 
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void Camera::keyFunctionality(const Window* currWindow, float deltaTime) {
+void Camera::keyFunctionality(const Window& currWindow, float deltaTime) {
 	velocity = movementSpeed * deltaTime * movementSpeedMultiplier;
 
-	if (currWindow->getKeyPress(GLFW_KEY_W) || currWindow->getKeyPress(GLFW_KEY_UP))
+	if (currWindow.getKeyPress(GLFW_KEY_W) || currWindow.getKeyPress(GLFW_KEY_UP))
 		updatePosition(Direction::FORWARD, front);
 
-	if (currWindow->getKeyPress(GLFW_KEY_S) || currWindow->getKeyPress(GLFW_KEY_DOWN))
+	if (currWindow.getKeyPress(GLFW_KEY_S) || currWindow.getKeyPress(GLFW_KEY_DOWN))
 		updatePosition(Direction::BACKWARD, front);
 
-	if (currWindow->getKeyPress(GLFW_KEY_D) || currWindow->getKeyPress(GLFW_KEY_RIGHT))
+	if (currWindow.getKeyPress(GLFW_KEY_D) || currWindow.getKeyPress(GLFW_KEY_RIGHT))
 		updatePosition(Direction::STRAFE_RIGHT, right);
 
-	if (currWindow->getKeyPress(GLFW_KEY_A) || currWindow->getKeyPress(GLFW_KEY_LEFT))
+	if (currWindow.getKeyPress(GLFW_KEY_A) || currWindow.getKeyPress(GLFW_KEY_LEFT))
 		updatePosition(Direction::STRAFE_LEFT, right);
 
-	if (currWindow->getKeyPress(GLFW_KEY_SPACE))
+	if (currWindow.getKeyPress(GLFW_KEY_SPACE))
 		updatePosition(Direction::UP, up);
 
-	if (currWindow->getKeyPress(GLFW_KEY_LEFT_CONTROL))
+	if (currWindow.getKeyPress(GLFW_KEY_LEFT_CONTROL))
 		updatePosition(Direction::DOWN, up);
 
-	if (currWindow->getKeyPress(GLFW_KEY_LEFT_SHIFT))
+	if (currWindow.getKeyPress(GLFW_KEY_LEFT_SHIFT))
 		movementSpeedMultiplier = 3.f;
 	else
 		movementSpeedMultiplier = 1.f;
@@ -72,11 +70,14 @@ void Camera::mouseFunctionality(float xChange, float yChange, float scrollChange
 	if (pitch < -89.f) {
 		pitch = -89.f;
 	}
-
-	update();
 }
 
-void Camera::update() {
+void Camera::update(Window& window, float deltaTime) {
+	if(window.getRMBPressed()) {
+		keyFunctionality(window, deltaTime);
+		mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
+	}
+
 	front.x = cosf(glm::radians(yaw)) * cosf(glm::radians(pitch));
 	front.y = sinf(glm::radians(pitch));
 	front.z = sinf(glm::radians(yaw)) * cosf(glm::radians(pitch));
@@ -89,12 +90,14 @@ void Camera::update() {
 	cameraData.view = generateViewMatrix();
 
 	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
+
 	void* memory = glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(CameraData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT);
-	if (memory) {
+
+	if (memory)
 		memcpy(memory, &cameraData, sizeof(CameraData));
-		glUnmapBuffer(GL_UNIFORM_BUFFER);
-	}
 	else
 		std::cerr << "Failed to map uniform camera data buffer" << std::endl;
+
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }

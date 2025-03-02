@@ -2,9 +2,12 @@
 #define _WINDOW_H_
 
 #include <iostream>
+
 #include "../Core Includes/GL_Core.h"
 #include "../Core Includes/GLM_Core.h"
 #include "../Core Includes/Core.h"
+
+#include <GLFW/glfw3.h>
 
 enum CONTEXT_VERSION : int { MAJOR = 4, MINOR = 6 };
 
@@ -68,9 +71,6 @@ public:
 
 	GLFWwindow* getGlfwWindow() const { return window; }
 	const Window* getCurrWindow() const { return this; }
-
-	void setLMBPressed(bool val) { LMBPressed = val; }
-	void setRMBPressed(bool val) { RMBPressed = val; }
 
 	bool getLMBPressed() const { return LMBPressed; }
 	bool getRMBPressed() const { return RMBPressed; }

@@ -6,7 +6,7 @@
 #include <assimp/postprocess.h>
 #include "Mesh.h"
 
-#define ASSIMP_LOAD_FLAGS (aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes)
+#define ASSIMP_LOAD_FLAGS (aiProcessPreset_TargetRealtime_Quality | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes)
 
 class Model : public Mesh {
 protected:
@@ -20,8 +20,6 @@ protected:
 	std::vector<Texture*> occlusionTextures;
 	std::vector<Texture*> metalnessTextures;
 	std::vector<Texture*> emissiveTextures;
-
-	uint32_t RSBO{ 0 };
 
 	void _loadNode(aiNode* node, const aiScene* const scene);
 	void _loadMesh(aiMesh* mesh, const aiScene* const scene);

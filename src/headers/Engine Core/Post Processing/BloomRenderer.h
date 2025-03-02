@@ -30,16 +30,14 @@ public:
 	BloomRenderer();
 
 	void resize(glm::ivec4 viewportDimensions) {
-		if (viewportDimensions.z <= 0 || viewportDimensions.w <= 0) {
-			std::cerr << "Invalid framebuffer dimensions" << std::endl;
-			return;
-		}
+		int width = std::max(1, viewportDimensions.z);
+		int height = std::max(1, viewportDimensions.w);
 
 		srcViewportSize = viewportDimensions;
-		srcViewportSizeFLT = glm::vec2((float)viewportDimensions.z, (float)viewportDimensions.w);
+		srcViewportSizeFLT = glm::vec2((float)width, (float)height);
 
 		isInit = false;
-		mFBO.resize(viewportDimensions.z, viewportDimensions.w);
+		mFBO.resize(width, height);
 	}
 
 	void setThreshold(float threshold) { this->threshold = (threshold < 0.f) ? 0.f : threshold; }

@@ -4,6 +4,17 @@ Shader::Shader(std::string vertFileName, std::string fragFileName, std::string g
 	: vertexShaderSource{ nullptr }, fragmentShaderSource{ nullptr }, geometryShaderSource{ nullptr },
 	vertexShaderID{ 0 }, fragmentShaderID{ 0 }, geometryShaderID{ 0 }, computeShaderID{ 0 }, programID{ 0 }
 {
+	initShader(vertFileName, fragFileName, geomFileName);
+}
+
+Shader::Shader(std::string compFileName)
+	: vertexShaderSource{ nullptr }, fragmentShaderSource{ nullptr }, geometryShaderSource{ nullptr },
+	vertexShaderID{ 0 }, fragmentShaderID{ 0 }, geometryShaderID{ 0 }, computeShaderID{ 0 }, programID{ 0 }
+{
+	initShader(compFileName);
+}
+
+void Shader::initShader(std::string vertFileName, std::string fragFileName, std::string geomFileName) {
 	std::vector<std::string> files{};
 	files.push_back(vertFileName);
 	files.push_back(fragFileName);
@@ -20,6 +31,8 @@ Shader::Shader(std::string vertFileName, std::string fragFileName, std::string g
 		compileShader(geomFileName, geometryShaderID, geometryShaderSource, GL_GEOMETRY_SHADER);
 		attachShader(files, { vertexShaderID, fragmentShaderID, geometryShaderID });
 		glDeleteShader(geometryShaderID);
+
+		delete[] geometryShaderSource;
 	}
 	else {
 		attachShader(files, { vertexShaderID, fragmentShaderID });
@@ -32,13 +45,9 @@ Shader::Shader(std::string vertFileName, std::string fragFileName, std::string g
 
 	delete[] vertexShaderSource;
 	delete[] fragmentShaderSource;
-	delete[] geometryShaderSource;
 }
 
-Shader::Shader(std::string compFileName)
-	: vertexShaderSource{ nullptr }, fragmentShaderSource{ nullptr }, geometryShaderSource{ nullptr },
-	vertexShaderID{ 0 }, fragmentShaderID{ 0 }, geometryShaderID{ 0 }, computeShaderID{ 0 }, programID{ 0 }
-{
+void Shader::initShader(std::string compFileName) {
 	std::vector<std::string> files{};
 	files.push_back(compFileName);
 
@@ -49,6 +58,56 @@ Shader::Shader(std::string compFileName)
 	glDeleteShader(computeShaderID);
 
 	delete[] computeShaderSource;
+}
+
+void Shader::reloadShader(std::string vertFileName, std::string fragFileName, std::string geomFileName) {
+	glDeleteProgram(programID);
+	programID = 0;
+
+	initShader(vertFileName, fragFileName, geomFileName);
+}
+
+void Shader::reloadShader(std::string compFileName) {
+	glDeleteProgram(programID);
+	programID = 0;
+	
+	initShader(compFileName);
+}
+
+void Shader::transformFeedbackRelink(const char** varyings, int varyingsCount, GLenum bufferMode, 
+	std::string vertFileName, std::string fragFileName, std::string geomFileName) 
+{
+	reloadShader(vertFileName, fragFileName, geomFileName);
+
+	glTransformFeedbackVaryings(programID, varyingsCount, varyings, bufferMode);
+
+	glLinkProgram(programID);
+
+	// Get link status
+	int success{};
+	char infoLog[512] = { '\0' };
+
+	std::string buffer{ "( " + vertFileName + " " + fragFileName + " " };
+	if (geomFileName != "")
+		buffer += geomFileName;
+
+	buffer += ")";
+
+	glGetProgramiv(programID, GL_LINK_STATUS, &success);
+
+	if (!success) {
+		glGetProgramInfoLog(programID, 512, NULL, infoLog);
+		std::cerr << "Error. Program linking failed: " + buffer + "\n" << infoLog << std::endl;
+	}
+
+	glValidateProgram(programID);
+
+	glGetProgramiv(programID, GL_VALIDATE_STATUS, &success);
+
+	if (!success) {
+		glGetProgramInfoLog(programID, 512, NULL, infoLog);
+		std::cerr << "Error. Program validation failed: " + buffer + "\n" << infoLog << std::endl;
+	}
 }
 
 void Shader::readFile(std::string fileName, char*& shader) {

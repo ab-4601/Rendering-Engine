@@ -6,11 +6,13 @@
 
 #include "../headers/Application/Application.h"
 #include "../headers/Engine Core/Entity/ECS.h"
+#include "../headers/Application/DebugCallback.h"
 
 int main() {
     srand((uint32_t)time(0));
 
     Application app{};
+    RegisterDebugCallback();
     app.start();
 
     return 0;

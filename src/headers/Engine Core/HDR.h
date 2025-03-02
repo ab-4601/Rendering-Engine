@@ -36,10 +36,8 @@ public:
 	}
 
 	void resize(int width, int height, bool isMSAA = false) {
-		if (width <= 0 || height <= 0) {
-			std::cerr << "Invalid framebuffer dimensions" << std::endl;
-			return;
-		}
+		width = std::max(1, width);
+		height = std::max(1, height);
 
 		if (isMSAA) 
 			_initMSAA(width, height);

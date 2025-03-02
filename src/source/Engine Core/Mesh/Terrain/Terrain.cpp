@@ -148,7 +148,7 @@ void Terrain::generateTerrain(float scale) {
 			height += heightMaps.at(j).at(i);
 		}
 
-		finalHeightMap.push_back(height);
+		finalHeightMap.push_back((height < 0.f) ? 0.f : height);
 	}
 
 	int index = 0;
@@ -177,7 +177,7 @@ void Terrain::generateTerrain(float scale) {
 	generateTexCoords();
 }
 
-void Terrain::genearteTerrainFromHeightMap(const std::string& filePath) {
+void Terrain::genearteTerrainFromHeightMap(const std::string& filePath, float yScale, float yShift) {
 	int width{}, height{}, nChannels{};
 	unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nChannels, 0);
 
@@ -186,18 +186,17 @@ void Terrain::genearteTerrainFromHeightMap(const std::string& filePath) {
 	strips = height - 1;
 	verticesPerStrip = width * 2;
 
-	float yScale = 64.f / 256.f, yShift = 16.f;
-
-	Vertex currVertex;
+	yScale /= 256.f;
+	Vertex vertex;
 
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			unsigned char* texel = data + (j + width * i) * nChannels;
 			unsigned char y = texel[0];
 
-			currVertex.position.x = float(-height / 2.f + i);
-			currVertex.position.y = float((int)y * yScale - yShift);
-			currVertex.position.z = float(-width / 2.f + j);
+			vertex.position.x = float(-height / 2.f + i);
+			vertex.position.y = float((int)y * yScale - yShift);
+			vertex.position.z = float(-width / 2.f + j);
 		}
 	}
 

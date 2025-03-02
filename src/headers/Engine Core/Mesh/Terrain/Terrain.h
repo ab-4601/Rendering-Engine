@@ -30,7 +30,7 @@ public:
 		int maxRandomSeed = 10, int maxOctaves = 10);
 
 	void generateHeightMaps(int noOfMaps);
-	void genearteTerrainFromHeightMap(const std::string& filePath);
+	void genearteTerrainFromHeightMap(const std::string& filePath, float yScale, float yShift);
 	void generateTerrain(float scale = 1.f);
 
 	void generateVertexNormals();

@@ -1,8 +1,7 @@
 #ifndef _APPLICATION_H_
 #define _APPLICATION_H_
 
-#pragma once
-
+#include "../Engine Core/Window.h"
 #include "../Engine Core/Skybox.h"
 #include "../Engine Core/Editor/Overlay.h"
 #include "../Engine Core/Lights/SpotLight.h"
@@ -12,7 +11,7 @@
 #include "../Engine Core/Mesh/Geometry/Icosphere.h"
 #include "../Engine Core/Shadows/CascadedShadows.h"
 #include "../Engine Core/Lights/DirectionalLight.h"
-#include "../Engine Core/Post Processing/BloomRenderer.h"
+#include "../Particle System TF/ParticleSystemTF.h"
 #include "../Engine Core/Particle System/ParticleSystem.h"
 
 #include "../Scene Core/Grid.h"
@@ -25,18 +24,14 @@ private:
     float currTime = 0.f, prevTime = 0.f, elapsedTime = 0.f;
     float frameRateCap = 0.f;
 
-    glm::mat4 viewportMatrix{ 1.f };
-    glm::vec2 mouseCoords{ 0.f };
-
     int bufferWidth{ 0 }, bufferHeight{ 0 };
 
     Quad quad;
     Window window{ 1600, 900 };
-    Camera EditorCamera{ {-300, 500, 0}, window.getBufferWidth(), window.getBufferHeight() };
-    Skybox skybox{ window.getBufferWidth(), window.getBufferHeight(), "src/Content/Textures/skybox/kloofendal_48d_partly_cloudy_puresky_4k.hdr" };
+    Skybox skybox{ window.getBufferWidth(), window.getBufferHeight() };
     DirectionalLight skylight{ 0.1f, 0.5f, { 4000.f, 4000.f, 0.f }, { 1.f, 1.f, 1.f } };
     LightSources lightSources;
-    CascadedShadows csm{ window.getBufferWidth(), window.getBufferHeight(), 0.5f, 20, 10, 10 };
+    CascadedShadows csm{ window.getBufferWidth(), window.getBufferHeight(), 0.5f, 20, 8, 16 };
 
     std::vector<PointLight*> pointLights{ ::MAX_POINT_LIGHTS, nullptr };
     std::vector<SpotLight*> spotLights{ ::MAX_SPOT_LIGHTS, nullptr };
@@ -51,7 +46,7 @@ private:
     void setLightingUniforms(Shader& shader);
     void setGlobalPBRUniforms(Shader& shader);
 
-    void mainLoopForward(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition);
+    void mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition);
     void mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition);
 
 public:
@@ -59,7 +54,10 @@ public:
 
     void start();
 
-    ~Application() = default;
+    ~Application() {
+        glDeleteBuffers(1, &Mesh::RenderDataBufferObject);
+        Mesh::RenderDataBufferObject = 0;
+    }
 };
 
 #endif

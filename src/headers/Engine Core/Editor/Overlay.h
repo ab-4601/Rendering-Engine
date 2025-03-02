@@ -15,6 +15,14 @@
 #include "../Post Processing/PostProcessMaster.h"
 #include "MouseSelector.h"
 
+template <typename T>
+struct ComboItem {
+	std::string label = "";
+	std::vector<T> values = {};
+	std::vector<bool> flags = {};
+	std::vector<std::string> displayVals = {};
+};
+
 class Overlay {
 private:
 	ImGuizmo::OPERATION transformOperation = ImGuizmo::TRANSLATE;
@@ -22,43 +30,54 @@ private:
 	ImGuiIO* io = nullptr;
 	ImGuiStyle* style = nullptr;
 
-	uint32_t viewportColorBuffer{ 0 };
 	glm::ivec4 viewportDimensions{ 0 };
 
 	ImVec2 viewportPos{ 0.f, 0.f }, mousePos{ 0.f, 0.f }, viewportSize{ 0.f, 0.f };
-
+	
 	char FPS[24] = { '\0' };
 
 	float colorBuffer[4] = { 0.f, 0.f, 0.f, 1.f };
 	float translation[3] = { 0.f, 0.f, 0.f }, rotation[3] = { 0.f, 0.f, 0.f }, scale[3] = { 0.f, 0.f, 0.f };
 	float metallic = 0.f, ao = 0.f, roughness = 0.f, aspectRatio = 0.f;
 
-	bool isMouseOverViewport = false, runtimeInformation = false;
+	bool isMouseOverViewport = false;
 
-	std::vector<bool> msaaSelected{ true, false, false };
-	std::vector<int> numSamples{ 4, 8, 16 };
-	std::vector<std::string> msaaSampleDisplayOptions{ "MSAA4x", "MSAA8x", "MSAA16x" };
-
-	std::vector<bool> selectedFramerate{ true, false, false, false };
-	std::vector<float> frameTimes{ 0.016f, 0.012f, 0.008f, 0.f };
-	std::vector<std::string> frameTimeDisplayOptions{ "60 FPS", "80 FPS", "120 FPS", "Disable Framerate Cap" };
+	ComboItem<int> MSAA;
+	ComboItem<float> frameRate;
 
 	void DrawVec3Control(const std::string& label, float* values, float resetValue = 0.f, float columnWidth = 120.f);
-	void DrawDragFloat(const std::string& label, float* values, float speed = 1.f, float columnWidth = 120.f);
+	void DrawDragFloat(const std::string& label, float* values, float speed = 1.f, float columnWidth = 120.f, float min = 0.f, float max = 0.f);
 	void DrawSliderFloat(const std::string& label, float* values, float min, float max, float columnWidth = 120.f);
 
-	void DrawRuntimeInformation() const;
+	template <typename T>
+	int DrawCombo(ComboItem<T>& item, int& selection);
+
 	void CreateDockingSpace();
 
-	void manipulate(float x, float y, float width, float height, const Camera& camera);
+	void manipulate(float x, float y, float width, float height);
 
 	void DrawRenderingModifiers(const Window& window);
-	void DrawSceneViewportForward(glm::mat4& viewportMatrix, const Window& window, Camera& camera);
-	void DrawSceneViewportDeferred(glm::mat4& viewportMatrix, const Window& window, Camera& camera);
+	void DrawSceneViewportForward(const Window& window);
+	void DrawSceneViewportDeferred(const Window& window);
 	void DrawDetailsPanel(const Window& window);
 
+	void ResizeViewportForward();
+	void ResizeViewportDeferred();
+
 public:
-	Overlay() = default;
+	Overlay() {
+		MSAA.label = "MSAA Samples";
+		MSAA.flags = { true, false, false };
+		MSAA.displayVals = { "MSAA4x", "MSAA8x", "MSAA16x" };
+		MSAA.values = { 4, 8, 16 };
+
+		frameRate.label = "Framerate Cap";
+		frameRate.flags = { true, false, false, false };
+		frameRate.displayVals = { "60 FPS", "80 FPS", "120 FPS", "Disable Framerate Cap" };
+		frameRate.values = { 0.016f, 0.012f, 0.008f, 0.f };
+	}
+
+	Camera EditorCamera;
 
 	Overlay& operator=(const Overlay&) = delete;
 	static Overlay& Editor() {
@@ -71,9 +90,12 @@ public:
 
 	glm::ivec2 entityID{ -1 };
 	glm::vec3 directionalLightPosition{ 3000.f, 3000.f, 0.f };
+	glm::mat4 viewportMatrix{ 1.f };
 
 	float exposure = 1.f, filterRadius = 0.005f, shadowRadius = 2.f, bloomKnee = 0.04f, emissiveMaterialStrength = 1.f;
 	float bloomThreshold = 1.f, ssaoRadius = 50.f, ssaoBias = 2.f, ssaoOcclusionPower = 10.f, frameRateCap = 0.016f;
+
+	float pcfSamples = 8.f;
 
 	void _init(const Window& window);
 
@@ -85,15 +107,15 @@ public:
 	int viewportHeight() const { return viewportDimensions.w; }
 	const glm::ivec4& getViewportDimensions() const { return viewportDimensions; }
 
-	void DrawEditorForward(const Window& window, Camera& camera, glm::mat4& viewportMatrix) {
+	void DrawEditorForward(const Window& window) {
+		DrawSceneViewportForward(window);
 		DrawRenderingModifiers(window);
-		DrawSceneViewportForward(viewportMatrix, window, camera);
 		DrawDetailsPanel(window);
 	}
 
-	void DrawEditorDeferred(const Window& window, Camera& camera, glm::mat4& viewportMatrix) {
+	void DrawEditorDeferred(const Window& window) {
+		DrawSceneViewportDeferred(window);
 		DrawRenderingModifiers(window);
-		DrawSceneViewportDeferred(viewportMatrix, window, camera);
 		DrawDetailsPanel(window);
 	}
 

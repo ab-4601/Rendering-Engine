@@ -28,16 +28,30 @@ protected:
 	void compileShader(std::string fileName, uint32_t& shaderID, const char* shader, GLenum shaderType) const;
 	void attachShader(std::vector<std::string> files, std::vector<uint32_t> shaderIDs);
 
+	void initShader(std::string vertFileName, std::string fragFileName, std::string geomFileName);
+	void initShader(std::string compFileName);
+
 public:
 	Shader(std::string compFileName = "");
 	Shader(std::string vertFileName, std::string fragFileName, std::string geomFileName = "");
 
+	void reloadShader(std::string vertFileName = "", std::string fragFileName = "", std::string geomFileName = "");
+	void reloadShader(std::string compFileName = "");
+
+	void transformFeedbackRelink(
+		const char** varyings = nullptr, int varyingsCount = 0, GLenum bufferMode = GL_INTERLEAVED_ATTRIBS,
+		std::string vertFileName = "", std::string fragFileName = "", std::string geomFileName = ""
+	);
+
 	void useShader() const { glUseProgram(programID); }
 	void endShader() const { glUseProgram(0); }
+
 	void dispatchComputeShader(int x, int y, int z, GLbitfield barriers) const {
 		glDispatchCompute(x, y, z);
 		glMemoryBarrier(barriers);
 	}
+
+	uint32_t getProgramID() const { return programID; }
 
 	std::unordered_map<std::string, uint32_t> getShaderUniforms() {
 		return shaderUniforms;

@@ -3,6 +3,8 @@
 
 #include "../../../Core Includes/GL_Core.h"
 
+typedef unsigned int uint32_t;
+
 class Quad {
 private:
 	float vertices[20] = {

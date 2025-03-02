@@ -50,18 +50,16 @@ public:
 	}
 
 	void resize(glm::ivec4 viewportDimensions, bool isMSAA = false) {
-		if (viewportDimensions.z <= 0 || viewportDimensions.w <= 0) {
-			std::cerr << "Invalid framebuffer dimensions" << std::endl;
-			return;
-		}
+		int width = std::max(1, viewportDimensions.z);
+		int height = std::max(1, viewportDimensions.w);
 
 		screenDimensions = viewportDimensions;
 
 		bloom.resize(viewportDimensions);
-		_init(viewportDimensions.z, viewportDimensions.w);
+		_init(width, height);
 
 		if(isMSAA)
-			_initIntermediateFBO(viewportDimensions.z, viewportDimensions.w);
+			_initIntermediateFBO(width, height);
 	}
 
 	void postProcessingPass(bool applyBloom, float threshold, float knee, float filterRadius, float exposure);

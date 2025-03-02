@@ -42,11 +42,6 @@ void SelectionTexture::clearBuffers() {
 		glDeleteTextures(1, &depthTexture);
 		depthTexture = 0;
 	}
-
-	if (depthBuffer != 0) {
-		glDeleteRenderbuffers(1, &depthBuffer);
-		depthBuffer = 0;
-	}
 }
 
 PixelInfo SelectionTexture::readPixel(int x, int y) const {

@@ -5,6 +5,8 @@
 #include "../Camera.h"
 #include "../Texture.h"
 
+enum AttribLocation : int { POSITION = 0, TEXEL = 1, NORMAL = 2, TANGENT = 3, BITANGENT = 4 };
+
 struct Vertex {
 	glm::vec3 position;
 	glm::vec2 texel;
@@ -83,6 +85,7 @@ protected:
 
 public:
 	static std::vector<Mesh*> meshList;
+	static uint32_t RenderDataBufferObject;
 
 	Mesh(GLenum windingOrder = GL_CCW);
 

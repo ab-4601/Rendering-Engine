@@ -165,6 +165,12 @@
     <ClCompile Include="External Libs\GLAD\src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\source\Particle System TF\ParticleSystemTF.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source\Application\DebugCallback.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\headers\Engine Core\Window.h">
@@ -299,9 +305,6 @@
     <ClInclude Include="src\headers\Engine Core\Post Processing\PostProcessMaster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="External Libs\GLAD\include\KHR\khrplatform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="External Libs\imGUI\GraphEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -348,6 +351,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Engine Core\LightProbe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Particle System TF\ParticleSystemTF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Application\DebugCallback.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

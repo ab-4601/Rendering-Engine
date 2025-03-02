@@ -8,8 +8,7 @@ Model::Model(
 	aiTextureType normalMap, aiTextureType metallicMap, aiTextureType roughnessMap,
 	aiTextureType occlusionMap, aiTextureType emissiveMap,
 	bool isStrippedNormal, bool hasEmissiveMaterial, bool isPackedMap
-)
-	: Mesh(GL_CCW), texFolderPath{ texFolderPath }
+) : Mesh(GL_CCW), texFolderPath{ texFolderPath }
 {
 	meshList.pop_back();
 	meshCount--;
@@ -76,12 +75,6 @@ void Model::_updateRenderData() {
 
 		renderData.push_back(data);
 	}
-
-	glGenBuffers(1, &RSBO);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, RSBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, RSBO);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(RenderData3D) * renderData.size(), &renderData[0], GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 void Model::_loadNode(aiNode* node, const aiScene* const scene) {
@@ -205,9 +198,11 @@ void Model::loadModel(std::string fileName, aiTextureType diffuseMap, aiTextureT
 void Model::drawModel(GLenum renderMode) {
 	glFrontFace(windingOrder);
 
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, RSBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, RSBO);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(RenderData3D) * renderData.size(), &renderData[0], GL_DYNAMIC_DRAW);
+	GLsizeiptr bufferSize = sizeof(RenderData3D) * renderData.size();
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, RenderDataBufferObject);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, NULL, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bufferSize, &renderData[0]);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindVertexArray(VAO);
@@ -305,10 +300,5 @@ void Model::clearModel() {
 			delete emissiveTextures[i];
 			emissiveTextures[i] = nullptr;
 		}
-	}
-
-	if (RSBO != 0) {
-		glDeleteBuffers(1, &RSBO);
-		RSBO = 0;
 	}
 }

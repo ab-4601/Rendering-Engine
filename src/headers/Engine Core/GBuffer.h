@@ -35,10 +35,8 @@ public:
 	}
 
 	void resize(int width, int height) {
-		if (width <= 0 || height <= 0) {
-			std::cerr << "Invalid framebuffer dimensions" << std::endl;
-			return;
-		}
+		width = std::max(1, width);
+		height = std::max(1, height);
 
 		_init(width, height);
 	}

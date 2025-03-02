@@ -51,8 +51,9 @@ void ParticleRenderer::addInstancedAttribute(int attribute, int dataSize, int in
 	glBindBuffer(GL_ARRAY_BUFFER, iVBO);
 	glBindVertexArray(VAO);
 
-	glVertexAttribPointer(attribute, dataSize, GL_FLOAT, GL_FALSE,
-		instancedDataLength * sizeof(float), (void*)(offset * sizeof(float)));
+	glVertexAttribPointer(
+		attribute, dataSize, GL_FLOAT, GL_FALSE, instancedDataLength * sizeof(float), (void*)(offset * sizeof(float))
+	);
 	glVertexAttribDivisor(attribute, 1);
 	glEnableVertexAttribArray(attribute);
 
@@ -145,8 +146,6 @@ void ParticleRenderer::render(const std::vector<CParticle*>& particles, const Wi
 		updateTextureCoordInfo(&*particle);
 
 		glm::vec4 texOffset{ texOffset1.x, texOffset1.y, texOffset2.x, texOffset2.y };
-
-		texture.useTexture();
 	}
 
 	updateVBO();
@@ -155,6 +154,7 @@ void ParticleRenderer::render(const std::vector<CParticle*>& particles, const Wi
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE);
 
+	texture.useTexture();
 	drawParticleSprites(particles.size());
 
 	glDepthMask(true);

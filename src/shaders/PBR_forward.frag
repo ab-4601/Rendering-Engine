@@ -326,7 +326,7 @@ void main() {
 		else
 			texColor = texture2D(diffuseMap, data_in.texel);
 
-		if(texColor.a < 0.1f)
+		if(texColor.a < 0.1f && !drawWireframe)
 			discard;
 
 		albedo = texColor.rgb;
