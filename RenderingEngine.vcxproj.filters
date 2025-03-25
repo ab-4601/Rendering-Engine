@@ -63,7 +63,7 @@
     <ClCompile Include="src\source\Engine Core\Mesh\Geometry\Quad.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\source\Engine Core\Editor\Overlay.cpp">
+    <ClCompile Include="src\source\Engine Core\Editor\EngineEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\source\Engine Core\GBuffer.cpp">
@@ -168,7 +168,16 @@
     <ClCompile Include="src\source\Particle System TF\ParticleSystemTF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\source\Application\DebugCallback.cpp">
+    <ClCompile Include="src\source\Application\AttriblessRendering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source\Engine Core\Framebuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source\Engine Core\Editor\DebugLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source\Engine Core\Fluid Simulation\FluidSimulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -183,9 +192,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Core Includes\GLM_Core.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\headers\Core Includes\GL_Core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Application\Application.h">
@@ -230,7 +236,7 @@
     <ClInclude Include="src\headers\Engine Core\Entity\BoundingVolume.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\headers\Engine Core\Editor\Overlay.h">
+    <ClInclude Include="src\headers\Engine Core\Editor\EngineEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Engine Core\Mesh\Geometry\Quad.h">
@@ -356,7 +362,16 @@
     <ClInclude Include="src\headers\Particle System TF\ParticleSystemTF.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\headers\Application\DebugCallback.h">
+    <ClInclude Include="src\headers\Application\AttriblessRendering.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Engine Core\Framebuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Engine Core\Editor\DebugLog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\Engine Core\Fluid Simulation\FluidSimulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

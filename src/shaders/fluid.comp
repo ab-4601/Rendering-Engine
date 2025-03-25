@@ -5,9 +5,9 @@ layout (local_size_x = 256) in;
 const float PI = 3.14159265359;
 
 struct Particle {
-	vec3 position;
-	vec3 velocity;
-	vec3 acceleration;
+	vec4 position;
+	vec4 velocity;
+	vec4 acceleration;
 	float density;
 	float pressure;
 };
@@ -67,7 +67,7 @@ void main() {
 	if (i >= particles.length()) return;
 
 	Particle currentParticle = particles[i];
-	int cell = getGridCell(currentParticle.position);
+	int cell = getGridCell(currentParticle.position.xyz);
 
 	currentParticle.density = 0.f;
 	for(int dx = -1; dx <= 1; dx++) {
@@ -78,9 +78,9 @@ void main() {
 				if(neighborCell < 0 || neighborCell >= gridSize) continue;
 
 				for(int j = 0; j < particles.length(); j++) {
-					if(getGridCell(particles[j].position) != neighborCell) continue;
+					if(getGridCell(particles[j].position.xyz) != neighborCell) continue;
 
-					vec3 dx = currentParticle.position - particles[j].position;
+					vec3 dx = currentParticle.position.xyz - particles[j].position.xyz;
 					float r2 = dot(dx, dx);
 
 					if(r2 < hsq)
@@ -101,9 +101,9 @@ void main() {
 				if (neighborCell < 0 || neighborCell >= gridSize) continue;
 
 				for(int j = 0; j < particles.length(); j++) {
-					if(getGridCell(particles[j].position) != neighborCell) continue;
+					if(getGridCell(particles[j].position.xyz) != neighborCell) continue;
 
-					vec3 dx = currentParticle.position - particles[j].position;
+					vec3 dx = currentParticle.position.xyz - particles[j].position.xyz;
 					float r = length(dx);
 
 					if(r < h) {
@@ -113,7 +113,7 @@ void main() {
 
 						force += pressureForce * dx / r;
 
-						vec3 viscosityForce = viscosity * mass * (particles[j].velocity - currentParticle.velocity) /
+						vec3 viscosityForce = viscosity * mass * (particles[j].velocity.xyz - currentParticle.velocity.xyz) /
 											  particles[j].density * gradient;
 
 						force += viscosityForce;
@@ -123,7 +123,7 @@ void main() {
 		}
 	}
 
-	currentParticle.acceleration = force - gravity;
+	currentParticle.acceleration.xyz = force - gravity;
 
 	currentParticle.velocity += currentParticle.acceleration * dt;
 	currentParticle.position += currentParticle.velocity * dt;

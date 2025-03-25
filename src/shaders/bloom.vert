@@ -1,12 +1,15 @@
 #version 460 core
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 texCoord;
+const vec4 quad[4] = vec4[] (
+	vec4(-1.f,  1.f, 0.f, 1.f),
+	vec4(-1.f, -1.f, 0.f, 1.f),
+	vec4( 1.f,  1.f, 0.f, 1.f),
+	vec4( 1.f, -1.f, 0.f, 1.f)
+);
 
 out vec2 texel;
 
 void main() {
-	texel = texCoord;
-
-	gl_Position = vec4(aPos, 1.f);
+	gl_Position = vec4(quad[gl_VertexID]);
+	texel = 0.5f * (quad[gl_VertexID].xy + vec2(1.f));
 }

@@ -3,22 +3,20 @@
 
 #include "../Core Includes/Core.h"
 #include "Shader.h"
-#include "Texture.h"
-#include "Mesh/Geometry/Quad.h"
+#include "Framebuffer.h"
 
-class HDR {
+class HDR final : public Framebuffer {
 private:
-	uint32_t FBO = 0;
 	uint32_t colorBuffer = 0;
 	uint32_t renderBuffer = 0;
 
-	Quad quad;
+	bool multisampled = false;
+	int samples = 4;
 
-	bool checkFramebufferStatus();
-	void clearBuffers();
+	virtual void clearBuffers() override;
 
 public:
-	HDR();
+	HDR() = default;
 
 	HDR& operator=(const HDR&) = delete;
 	static HDR& Framebuffer() {
@@ -26,23 +24,38 @@ public:
 		return HDRFramebuffer; 
 	}
 
+	bool isMultisampled() const { return multisampled; }
+
+	void enableMultisampling() { multisampled = true; }
+	void disableMultisampling() { multisampled = false; }
+
 	void _init(int width, int height);
-	void _initMSAA(int width, int height, int samples = ::samples);
 
 	void updateSamplesMSAA(int width, int height, int samples) {
-		if (width <= 0 || height <= 0) return;
+		if (!multisampled) return;
 
-		_initMSAA(width, height, samples);
-	}
-
-	void resize(int width, int height, bool isMSAA = false) {
+		this->samples = samples;
 		width = std::max(1, width);
 		height = std::max(1, height);
 
-		if (isMSAA) 
-			_initMSAA(width, height);
-		else
-			_init(width, height);
+		clearBuffers();
+		_init(width, height);
+	}
+
+	void resize(int width, int height) {
+		width = std::max(1, width);
+		height = std::max(1, height);
+
+		clearBuffers();
+		_init(width, height);
+	}
+
+	void copyDepthInfo(uint32_t depthFBO, int width, int height) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, depthFBO);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
+		glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	}
 	
 	uint32_t FramebufferID() const { return FBO; }

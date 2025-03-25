@@ -5,8 +5,7 @@
 
 const int MAX_POINT_LIGHTS = 3;
 const int MAX_SPOT_LIGHTS = 3;
-const int MAX_CASCADES = 16;
-const float gamma = 2.2f;
+const int MAX_CASCADES = 8;
 const float wireframeWidth = 0.7f;
 const vec4 wireframeColor = vec4(0.f, 1.f, 1.f, 1.f);
 
@@ -88,10 +87,10 @@ uniform bool gammaCorrected;
 uniform bool isModel;
 uniform bool isPackedMaterialMap;
 
+uniform int cascadeCount;
 uniform float nearPlane;
 uniform float farPlane;
 uniform float emissiveIntensity;
-uniform int cascadeCount;
 uniform float cascadePlanes[MAX_CASCADES];
 uniform float radius;
 uniform vec3 offsetTexSize;
@@ -322,9 +321,9 @@ void main() {
 	if (useDiffuseMap) {
 		vec4 texColor = vec4(0.f);
 		if (isModel)
-			texColor = texture2D(sampler2D(renderData[data_in.drawID].diffuseMap), data_in.texel);
+			texColor = texture(sampler2D(renderData[data_in.drawID].diffuseMap), data_in.texel);
 		else
-			texColor = texture2D(diffuseMap, data_in.texel);
+			texColor = texture(diffuseMap, data_in.texel);
 
 		if(texColor.a < 0.1f && !drawWireframe)
 			discard;
@@ -335,9 +334,9 @@ void main() {
 	if (useNormalMap) {
 		//texel = parallaxMapping(data_in.texel, eyePosition - vec3(data_in.fragPos));
 		if (isModel)
-			N = texture2D(sampler2D(renderData[data_in.drawID].normalMap), data_in.texel).rgb;
+			N = texture(sampler2D(renderData[data_in.drawID].normalMap), data_in.texel).rgb;
 		else
-			N = texture2D(normalMap, data_in.texel).rgb;
+			N = texture(normalMap, data_in.texel).rgb;
 
 		N = normalize(N * 2.f - 1.f);
 
@@ -357,33 +356,33 @@ void main() {
 		if (isPackedMaterialMap) {
 			ao = 0.3f;
 			if (isModel) {
-				roughness = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).g;
-				metallic = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).b;
+				roughness = texture(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).g;
+				metallic = texture(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).b;
 			}
 			else {
-				roughness = texture2D(metallicMap, data_in.texel).g;
-				metallic = texture2D(metallicMap, data_in.texel).b;
+				roughness = texture(metallicMap, data_in.texel).g;
+				metallic = texture(metallicMap, data_in.texel).b;
 			}
 		}
 		else {
 			//ao = texture2D(sampler2D(renderData[data_in.drawID].occlusionMap), data_in.texel).r;
 			ao = 0.3f;
 			if (isModel) {
-				roughness = texture2D(sampler2D(renderData[data_in.drawID].roughnessMap), data_in.texel).r;
-				metallic = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).r;
+				roughness = texture(sampler2D(renderData[data_in.drawID].roughnessMap), data_in.texel).r;
+				metallic = texture(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).r;
 			}
 			else {
-				roughness = texture2D(roughnessMap, data_in.texel).r;
-				metallic = texture2D(roughnessMap, data_in.texel).r;
+				roughness = texture(roughnessMap, data_in.texel).r;
+				metallic = texture(roughnessMap, data_in.texel).r;
 			}
 		}
 	}
 
 	if (useEmissiveMap) {
 		if (isModel)
-			emissive = texture2D(sampler2D(renderData[data_in.drawID].emissiveMap), data_in.texel).rgb;
+			emissive = texture(sampler2D(renderData[data_in.drawID].emissiveMap), data_in.texel).rgb;
 		else
-			emissive = texture2D(emissiveMap, data_in.texel).rgb;
+			emissive = texture(emissiveMap, data_in.texel).rgb;
 
 		emissive *= emissiveIntensity;
 	}

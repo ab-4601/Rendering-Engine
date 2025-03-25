@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include "../Core Includes/GL_Core.h"
+#include <glad/glad.h>
 #include "../Core Includes/stb_image.h"
 
 constexpr auto FOURCC_DXT1 = 0x31545844;

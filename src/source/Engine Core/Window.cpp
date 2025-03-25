@@ -105,14 +105,12 @@ void Window::windowRefreshCallback(GLFWwindow* window) {
 void Window::setupWindow() {
     if (!glfwInit()) {
         std::cerr << "Unable to initialize glfw" << std::endl;
-        exit(1);
+        exit(-1);
     }
 
     // Setup GLFW window properties
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, CONTEXT_VERSION::MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, CONTEXT_VERSION::MINOR);
-
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
     // Core profile = no backwards compatibility
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -163,11 +161,6 @@ void Window::setupWindow() {
         glfwTerminate();
         exit(1);
     }
-
-    vendor = (const char*)glGetString(GL_VENDOR);
-    renderer = (const char*)glGetString(GL_RENDERER);
-    version = (const char*)glGetString(GL_VERSION);
-    glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_POINT_SPRITE);

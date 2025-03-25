@@ -1,10 +1,9 @@
 #ifndef _BLOOM_FBO_H_
 #define _BLOOM_FBO_H_
 
-#include <iostream>
 #include <vector>
-#include "../../Core Includes/GL_Core.h"
 #include "../../Core Includes/GLM_Core.h"
+#include "../Framebuffer.h"
 
 struct BloomMip {
 	glm::vec2 size{ 0 };
@@ -12,15 +11,14 @@ struct BloomMip {
 	uint32_t texture{ 0 };
 };
 
-class BloomFBO {
+class BloomFBO final : public Framebuffer {
 private:
-	uint32_t FBO{ 0 };
 	bool isInit = false;
 	std::vector<BloomMip> mMipChain{};
 
 	uint32_t iterations = 5;
 
-	void clearBuffers();
+	virtual void clearBuffers() override;
 
 public:
 	BloomFBO() = default;

@@ -2,10 +2,11 @@
 #define _GBUFFER_H_
 
 #include "Mesh/Model.h"
+#include "Framebuffer.h"
 
-class GBuffer {
+class GBuffer final : public Framebuffer {
 private:
-	uint32_t FBO{ 0 }, RBO{ 0 }, gPosition{ 0 }, gNormal{ 0 }, gAlbedo{ 0 }, gMetallic{ 0 };
+	uint32_t RBO{ 0 }, gPosition{ 0 }, gNormal{ 0 }, gAlbedo{ 0 }, gMetallic{ 0 };
 
 	bool drawWireframe{ false };
 	glm::mat4 viewportMatrix{ 1.f };
@@ -14,10 +15,10 @@ private:
 
 	GLenum colorAttachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 
-	void genTexture(uint32_t& texID, GLenum colorAttachment, int windowWidth, int windowHeight);
+	void setColorAttachment(uint32_t& texID, GLenum colorAttachment, int windowWidth, int windowHeight);
 	void _init(int windowWidth, int windowHeight);
 
-	void clearBuffers();
+	virtual void clearBuffers() override;
 
 public:
 	GBuffer(int windowWidth, int windowHeight);

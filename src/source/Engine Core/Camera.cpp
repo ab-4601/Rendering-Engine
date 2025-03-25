@@ -23,7 +23,7 @@ void Camera::init(const Window& window, glm::vec3 position, float movementSpeed,
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void Camera::keyFunctionality(const Window& currWindow, float deltaTime) {
+void Camera::keyFunctionality(const Window& currWindow) {
 	velocity = movementSpeed * deltaTime * movementSpeedMultiplier;
 
 	if (currWindow.getKeyPress(GLFW_KEY_W) || currWindow.getKeyPress(GLFW_KEY_UP))
@@ -72,9 +72,9 @@ void Camera::mouseFunctionality(float xChange, float yChange, float scrollChange
 	}
 }
 
-void Camera::update(Window& window, float deltaTime) {
+void Camera::update(Window& window) {
 	if(window.getRMBPressed()) {
-		keyFunctionality(window, deltaTime);
+		keyFunctionality(window);
 		mouseFunctionality(window.getXChange(), window.getYChange(), window.getScrollChange());
 	}
 

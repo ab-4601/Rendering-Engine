@@ -3,7 +3,6 @@
 
 #include <vector>
 #include "../Core Includes/GLM_Core.h"
-#include "../Core Includes/GL_Core.h"
 #include "../Engine Core/Lights/DirectionalLight.h"
 #include "../Engine Core/Lights/PointLight.h"
 #include "../Engine Core/Lights/SpotLight.h"

@@ -43,7 +43,7 @@ void Mesh::loadMesh(bool useDiffuseMap, bool drawIndexed, bool useNormalMap, boo
 	glEnableVertexAttribArray(AttribLocation::TANGENT);
 	glVertexAttribPointer(AttribLocation::TANGENT, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
 
-	if (drawIndexed == true) {
+	if (drawIndexed) {
 		glGenBuffers(1, &EBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), &indices[0], GL_STATIC_DRAW);
@@ -70,11 +70,8 @@ void Mesh::drawMesh(GLenum renderMode) {
 		glDrawElements(renderMode, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
-	else {
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	else
 		glDrawArrays(renderMode, 0, (GLsizei)vertices.size());
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
 
 	glBindVertexArray(0);
 }

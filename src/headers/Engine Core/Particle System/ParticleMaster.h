@@ -28,7 +28,7 @@ public:
 		renderer.setTexture(this->texture);
 	}
 
-	void update(float delta, glm::vec3 cameraPosition);
+	void update(glm::vec3 cameraPosition);
 
 	void renderParticles(const Window* const currWindow, const Camera& camera,
 		glm::mat4& model, const glm::mat4& projection) {

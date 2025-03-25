@@ -1,9 +1,11 @@
 #include "../../headers/Engine Core/Shader.h"
 
 Shader::Shader(std::string vertFileName, std::string fragFileName, std::string geomFileName)
-	: vertexShaderSource{ nullptr }, fragmentShaderSource{ nullptr }, geometryShaderSource{ nullptr },
+	: 
+	vertexShaderSource{ nullptr }, fragmentShaderSource{ nullptr }, geometryShaderSource{ nullptr },
 	vertexShaderID{ 0 }, fragmentShaderID{ 0 }, geometryShaderID{ 0 }, computeShaderID{ 0 }, programID{ 0 }
 {
+	shaderUniforms.clear();
 	initShader(vertFileName, fragFileName, geomFileName);
 }
 
@@ -11,6 +13,7 @@ Shader::Shader(std::string compFileName)
 	: vertexShaderSource{ nullptr }, fragmentShaderSource{ nullptr }, geometryShaderSource{ nullptr },
 	vertexShaderID{ 0 }, fragmentShaderID{ 0 }, geometryShaderID{ 0 }, computeShaderID{ 0 }, programID{ 0 }
 {
+	shaderUniforms.clear();
 	initShader(compFileName);
 }
 
@@ -64,12 +67,16 @@ void Shader::reloadShader(std::string vertFileName, std::string fragFileName, st
 	glDeleteProgram(programID);
 	programID = 0;
 
+	shaderUniforms.clear();
+
 	initShader(vertFileName, fragFileName, geomFileName);
 }
 
 void Shader::reloadShader(std::string compFileName) {
 	glDeleteProgram(programID);
 	programID = 0;
+
+	shaderUniforms.clear();
 	
 	initShader(compFileName);
 }

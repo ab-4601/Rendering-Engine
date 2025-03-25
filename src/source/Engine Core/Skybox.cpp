@@ -15,8 +15,6 @@ Skybox::Skybox(int windowWidth, int windowHeight, const char* fileName)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	quad.createQuad();
-
 	_initFBO();
 	loadEquirectangularMap(fileName);
 	_generateCubemap();
@@ -25,6 +23,38 @@ Skybox::Skybox(int windowWidth, int windowHeight, const char* fileName)
 	_generateBRDFMap();
 
 	glViewport(0, 0, windowWidth, windowHeight);
+}
+
+void Skybox::clearBuffers() {
+	if (FBO != 0) {
+		glDeleteFramebuffers(1, &FBO);
+		FBO = 0;
+	}
+
+	if (RBO != 0) {
+		glDeleteRenderbuffers(1, &RBO);
+		RBO = 0;
+	}
+
+	if (environmentMap != 0) {
+		glDeleteTextures(1, &environmentMap);
+		environmentMap = 0;
+	}
+
+	if (irradianceMap != 0) {
+		glDeleteTextures(1, &irradianceMap);
+		irradianceMap = 0;
+	}
+
+	if (prefilterMap != 0) {
+		glDeleteTextures(1, &prefilterMap);
+		prefilterMap = 0;
+	}
+
+	if (brdfTexture != 0) {
+		glDeleteTextures(1, &brdfTexture);
+		brdfTexture = 0;
+	}
 }
 
 void Skybox::_initFBO() {
@@ -89,10 +119,7 @@ void Skybox::_generateCubemap() {
 
 	for (int i = 0; i < 6; i++) {
 		hdrToCubeShader.setMat4("view", viewMatrices[i]);
-		glFramebufferTexture2D(
-			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, environmentMap, 0
-		);
-
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, environmentMap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		renderCube();
@@ -134,10 +161,7 @@ void Skybox::_generateIrradianceMap() {
 	glViewport(0, 0, CONVOLUTION_RESOLUTION, CONVOLUTION_RESOLUTION);
 	for (int i = 0; i < 6; i++) {
 		irradianceShader.setMat4("view", viewMatrices[i]);
-		glFramebufferTexture2D(
-			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0
-		);
-
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		renderCube();
@@ -189,11 +213,9 @@ void Skybox::_generatePrefilterMipmap() {
 
 		for (uint32_t j = 0; j < 6; j++) {
 			prefilterShader.setMat4("view", viewMatrices[j]);
-			glFramebufferTexture2D(
-				GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, prefilterMap, mipLevel
-			);
-
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, prefilterMap, mipLevel);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 			renderCube();
 		}
 	}
@@ -223,7 +245,9 @@ void Skybox::_generateBRDFMap() {
 	brdfShader.useShader();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	quad.renderQuad();
+	
+	bindAttriblessVAO();
+	drawAttriblessQuad();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -234,7 +258,7 @@ void Skybox::renderSkybox() {
 	skyboxShader.useShader();
 	glDepthFunc(GL_LEQUAL);
 
-	glBindTexture(GL_TEXTURE_CUBE_MAP, environmentMap);
+	glBindTextureUnit(0, environmentMap);
 
 	renderCube();
 

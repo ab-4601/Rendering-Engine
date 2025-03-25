@@ -1,22 +1,5 @@
 #include "../../../headers/Engine Core/Post Processing/PostProcessMaster.h"
 
-PostProcessMaster::PostProcessMaster(int windowWidth, int windowHeight) {
-	bloom._init(windowWidth, windowHeight);
-
-	screenDimensions = glm::ivec4(0, 0, windowWidth, windowHeight);
-	quad.createQuad();
-
-	glGenFramebuffers(1, &FBO);
-	glGenTextures(1, &colorBuffer);
-	glGenRenderbuffers(1, &RBO);
-
-	glGenFramebuffers(1, &intermediateFBO);
-	glGenTextures(1, &screenBuffer);
-
-	_init(windowWidth, windowHeight);
-	_initIntermediateFBO(windowWidth, windowHeight);
-}
-
 void PostProcessMaster::clearBuffers() {
 	if (FBO != 0) {
 		glDeleteFramebuffers(1, &FBO);
@@ -29,10 +12,10 @@ void PostProcessMaster::clearBuffers() {
 
 	if (intermediateFBO != 0) {
 		glDeleteFramebuffers(1, &intermediateFBO);
-		glDeleteTextures(1, &screenBuffer);
+		glDeleteTextures(1, &blitColorBuffer);
 
 		intermediateFBO = 0;
-		screenBuffer = 0;
+		blitColorBuffer = 0;
 	}
 
 	if (edgeFBO != 0) {
@@ -47,9 +30,11 @@ void PostProcessMaster::clearBuffers() {
 	}
 }
 
-void PostProcessMaster::_init(int width, int height) const {
+void PostProcessMaster::_init(int width, int height) {
+	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
+	glGenTextures(1, &colorBuffer);
 	glBindTexture(GL_TEXTURE_2D, colorBuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -58,25 +43,29 @@ void PostProcessMaster::_init(int width, int height) const {
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
 
+	glGenRenderbuffers(1, &RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-	uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	if (status != GL_FRAMEBUFFER_COMPLETE) {
+	if (!checkFramebufferStatus()) {
 		std::cerr << "Error initializing post processing framebuffer" << std::endl;
 		exit(-1);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (HDR::Framebuffer().isMultisampled()) 
+		_initIntermediateFBO(width, height);
 }
 
-void PostProcessMaster::_initIntermediateFBO(int width, int height) const {
+void PostProcessMaster::_initIntermediateFBO(int width, int height) {
+	glGenFramebuffers(1, &intermediateFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO);
 
-	glBindTexture(GL_TEXTURE_2D, screenBuffer);
+	glGenTextures(1, &blitColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, blitColorBuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -84,11 +73,9 @@ void PostProcessMaster::_initIntermediateFBO(int width, int height) const {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenBuffer, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blitColorBuffer, 0);
 
-	uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	if (status != GL_FRAMEBUFFER_COMPLETE) {
+	if (!checkFramebufferStatus()) {
 		std::cerr << "Intermediate framebuffer initialization error" << std::endl;
 		exit(-1);
 	}
@@ -113,9 +100,7 @@ void PostProcessMaster::_initSMAA(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, edgeFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, edgeColorBuffer, 0);
 
-	uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	if (status != GL_FRAMEBUFFER_COMPLETE) {
+	if (!checkFramebufferStatus()) {
 		std::cerr << "Error initializing post processing framebuffer" << std::endl;
 		exit(-1);
 	}
@@ -132,9 +117,7 @@ void PostProcessMaster::_initSMAA(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, blendFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, blendColorBuffer, 0);
 
-	status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-	if (status != GL_FRAMEBUFFER_COMPLETE) {
+	if (!checkFramebufferStatus()) {
 		std::cerr << "Error initializing post processing framebuffer" << std::endl;
 		exit(-1);
 	}
@@ -152,10 +135,10 @@ void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture) {
 	edgeShader.setInt("screenTexture", 0);
 	edgeShader.setVec2("screenResolution", glm::ivec2(screenDimensions.z, screenDimensions.w));
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, screenTexture);
+	glBindTextureUnit(0, screenTexture);
 
-	quad.renderQuad();
+	bindAttriblessVAO();
+	drawAttriblessQuad();
 
 	edgeShader.endShader();
 
@@ -168,18 +151,34 @@ void PostProcessMaster::calcSMAAbuffers(uint32_t screenTexture) {
 	blendShader.setInt("edgeTexture", 0);
 	blendShader.setVec2("screenResolution", screenDimensions);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, edgeColorBuffer);
+	glBindTextureUnit(0, edgeColorBuffer);
 
-	quad.renderQuad();
+	bindAttriblessVAO();
+	drawAttriblessQuad();
 
 	blendShader.endShader();
 }
 
 void PostProcessMaster::postProcessingPass(bool applyBloom, float threshold, float knee, float filterRadius, float exposure) {
-	if (applyBloom) {
-		bloom.setThreshold(threshold);
-		bloom.renderBloomTexture(HDR::Framebuffer().ColorbufferID(), filterRadius, 0);
+	if (HDR::Framebuffer().isMultisampled()) {
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, HDR::Framebuffer().FramebufferID());
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
+		glBlitFramebuffer(
+			screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
+			screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
+			GL_COLOR_BUFFER_BIT, GL_NEAREST
+		);
+
+		if (applyBloom) {
+			bloom.setThreshold(threshold);
+			bloom.renderBloomTexture(blitColorBuffer, filterRadius);
+		}
+	}
+	else {
+		if (applyBloom) {
+			bloom.setThreshold(threshold);
+			bloom.renderBloomTexture(HDR::Framebuffer().ColorbufferID(), filterRadius);
+		}
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -190,62 +189,21 @@ void PostProcessMaster::postProcessingPass(bool applyBloom, float threshold, flo
 	shader.setiVec2("screenResolution", glm::ivec2(screenDimensions.z, screenDimensions.w));
 	shader.setFloat("exposure", exposure);
 	shader.setFloat("knee", knee);
+	shader.setFloat("time", currTime);
 	shader.setUint("enableBloom", applyBloom);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, HDR::Framebuffer().ColorbufferID());
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, bloom.bloomTexture());
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, blendColorBuffer);
-
-	quad.renderQuad();
-
-	glActiveTexture(GL_TEXTURE0);
-
-	shader.endShader();
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void PostProcessMaster::postProcessingPassMSAA(bool applyBloom, float threshold, float knee, float filterRadius, float exposure) {
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, HDR::Framebuffer().FramebufferID());
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
-	glBlitFramebuffer(
-		screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
-		screenDimensions.x, screenDimensions.y, screenDimensions.z, screenDimensions.w,
-		GL_COLOR_BUFFER_BIT, GL_NEAREST
-	);
-
-	if (applyBloom) {
-		bloom.setThreshold(threshold);
-		bloom.renderBloomTexture(screenBuffer, filterRadius, FBO);
+	if (HDR::Framebuffer().isMultisampled()) {
+		glBindTextureUnit(0, blitColorBuffer);
+	}
+	else {
+		glBindTextureUnit(0, HDR::Framebuffer().ColorbufferID());
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glBindTextureUnit(1, bloom.bloomTexture());
+	glBindTextureUnit(2, blendColorBuffer);
 
-	shader.useShader();
-
-	shader.setiVec2("screenResolution", screenDimensions);
-	shader.setFloat("exposure", exposure);
-	shader.setFloat("knee", knee);
-	shader.setUint("enableBloom", applyBloom);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, screenBuffer);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, bloom.bloomTexture());
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, blendColorBuffer);
-
-	quad.renderQuad();
-
-	glActiveTexture(GL_TEXTURE0);
+	bindAttriblessVAO();
+	drawAttriblessQuad();
 
 	shader.endShader();
 

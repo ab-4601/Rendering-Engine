@@ -32,12 +32,12 @@ ParticleMaster::ParticleMaster(ParticleMaster&& source) noexcept {
 	source.~ParticleMaster();
 }
 
-void ParticleMaster::update(float delta, glm::vec3 cameraPosition) {
+void ParticleMaster::update(glm::vec3 cameraPosition) {
 	if (particles.size() == 0)
 		return;
 
 	for (size_t i = 0; i < particles.size(); i++) {
-		particles.at(i)->updateDelta(delta);
+		particles.at(i)->updateDelta(deltaTime);
 		bool stillVisible = particles.at(i)->update(cameraPosition);
 
 		if (!stillVisible) {

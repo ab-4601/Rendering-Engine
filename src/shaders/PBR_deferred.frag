@@ -272,7 +272,7 @@ vec4 calcSpotLights() {
 }
 
 void main() {
-	ao = enableSSAO ? texture2D(occlusionSampler, texel).r : ao;
+	ao = enableSSAO ? texture2D(occlusionSampler, texel).r * 0.4f : ao;
 	F0 = mix(F0, albedo, metallic);
 
 	vec3 R = reflect(-V, N);

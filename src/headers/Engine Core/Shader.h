@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <random>
 #include <fstream>
-#include "../Core Includes/GL_Core.h"
+#include <glad/glad.h>
 #include "../Core Includes/GLM_Core.h"
 
 class Shader {

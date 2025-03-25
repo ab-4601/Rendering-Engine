@@ -3,11 +3,11 @@
 
 #include "../../Engine Core/Shader.h"
 #include "../../Engine Core/GBuffer.h"
-#include "../../Engine Core/Mesh/Geometry/Quad.h"
+#include "../../Application/AttriblessRendering.h"
 
-class SSAO {
+class SSAO final : public Framebuffer {
 private:
-	uint32_t FBO{ 0 }, blurFBO{ 0 }, colorBuffer{ 0 }, colorBufferBlur{ 0 }, noiseTexture{ 0 };
+	uint32_t blurFBO{ 0 }, colorBuffer{ 0 }, colorBufferBlur{ 0 }, noiseTexture{ 0 };
 
 	std::vector<glm::vec3> kernel;
 	std::vector<glm::vec3> noise;
@@ -18,8 +18,6 @@ private:
 
 	Shader shader{ "src/shaders/ssao.vert", "src/shaders/ssao.frag" };
 	Shader blurShader{ "src/shaders/ssao.vert", "src/shaders/ssaoBlur.frag" };
-
-	Quad quad;
 
 	float jitter(float x, float y) {
 		static std::default_random_engine generator;
@@ -37,17 +35,8 @@ private:
 		return a + c * (b - a);
 	}
 
-	bool checkFBOStatus() {
-		uint32_t status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
-		if (status != GL_FRAMEBUFFER_COMPLETE)
-			return false;
-
-		return true;
-	}
-
 	void ssaoBlur();
-	void clearBuffers();
+	virtual void clearBuffers() override;
 
 public:
 	SSAO(int windowWidth, int windowHeight);

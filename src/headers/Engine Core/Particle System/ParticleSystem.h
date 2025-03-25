@@ -27,8 +27,8 @@ public:
 		this->master.renderParticles(currWindow, camera, model, camera.getProjectionMatrix());
 	}
 
-	void updateParticles(float delta, glm::vec3 cameraPosition) {
-		this->master.update(delta, cameraPosition);
+	void updateParticles(glm::vec3 cameraPosition) {
+		this->master.update(cameraPosition);
 	}
 
 	~ParticleSystem() = default;

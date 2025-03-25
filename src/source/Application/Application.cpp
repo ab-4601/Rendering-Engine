@@ -1,4 +1,11 @@
 #include "../../headers/Application/Application.h"
+#include "../../headers/Application/AttriblessRendering.h"
+
+float currTime = 0.f;
+float deltaTime = 0.f;
+float lastTime = 0.f;
+float prevTime = 0.f;
+float elapsedTime = 0.f;
 
 Application::Application() {
     Mesh::meshList.clear();
@@ -14,8 +21,6 @@ Application::Application() {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, Mesh::RenderDataBufferObject);
     glBufferData(GL_SHADER_STORAGE_BUFFER, NULL, NULL, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-    quad.createQuad();
 }
 
 void Application::setLightingUniforms(Shader& shader) {
@@ -75,13 +80,11 @@ void Application::setLightingUniforms(Shader& shader) {
 }
 
 void Application::setGlobalPBRUniforms(Shader& shader) {
-    shader.useShader();
-
     shader.setFloat("nearPlane", ::near_plane);
     shader.setFloat("farPlane", ::far_plane);
     shader.setInt("cascadeCount", csm.getNumCascades());
     shader.setVec3("offsetTexSize", csm.getNoiseTextureSize());
-    shader.setMat4("viewportMatrix", Overlay::Editor().viewportMatrix);
+    shader.setMat4("viewportMatrix", EngineEditor::Editor().viewportMatrix);
 
     const float* cascadePlanes = csm.cascadePlanes();
 
@@ -92,25 +95,12 @@ void Application::setGlobalPBRUniforms(Shader& shader) {
         shader.setFloat(buffer, cascadePlanes[i]);
     }
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.getIrradianceMap());
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox.getPrefilterTexture());
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, skybox.getBRDFTexture());
-
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, csm.getShadowMaps());
-
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_3D, csm.noiseBuffer());
-
-    shader.endShader();
+    glBindTextureUnit(LIGHTING_SAMPLERS::IRRADIANCE, skybox.getIrradianceMap());
+    glBindTextureUnit(LIGHTING_SAMPLERS::PREFILTER, skybox.getPrefilterTexture());
+    glBindTextureUnit(LIGHTING_SAMPLERS::BRDF, skybox.getBRDFTexture());
+    glBindTextureUnit(LIGHTING_SAMPLERS::POINT_SHADOW, 0);
+    glBindTextureUnit(LIGHTING_SAMPLERS::CASCADED_SHADOW, csm.getShadowMaps());
+    glBindTextureUnit(LIGHTING_SAMPLERS::OFFSETS, csm.noiseBuffer());
 }
 
 void Application::start() {
@@ -129,32 +119,30 @@ void Application::start() {
     spotLights[0] = &spotLight1;
     spotLightCount++;*/
 
-    Overlay::Editor()._init(window);
+    EngineEditor::Editor()._init(window);
 
     glm::mat4 modelMatrix{ 1.f };
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(400.f, 100.f, 0.f));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(100.f));
 
     Icosphere sphere{ GL_CW, 5 };
-    sphere.setColor({ 0.07f, 1.f, 1.f });
+    sphere.setColor({ 1.f, 0.07f, 0.07f });
     sphere.setMeshMaterial(0.f, 0.f, 1.f);
+    sphere.setModelMatrix(modelMatrix);
     sphere.loadMesh();
 
     /*UVSphere sphere{ 100, 100, 1.f };
     sphere.setColor({ 0.07f, 1.f, 1.f });
     sphere.setMeshMaterial(0.f, 0.f, 1.f);
-    sphere.loadMesh();*/
-
-    modelMatrix = glm::mat4(1.f);
-    modelMatrix = glm::translate(modelMatrix, glm::vec3(400.f, 100.f, 0.f));
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(100.f));
-
     sphere.setModelMatrix(modelMatrix);
+    sphere.loadMesh();*/
 
     modelMatrix = glm::mat4(1.f);
     modelMatrix = glm::translate(modelMatrix, glm::vec3(0.f, 100.f, 0.f));
     modelMatrix = glm::scale(modelMatrix, glm::vec3(100.f));
 
     Cube cube{};
-    cube.setColor({ 1.f, 0.07f, 0.07f });
+    cube.setColor({ 0.07f, 1.f, 1.f });
     cube.setModelMatrix(modelMatrix);
     cube.setMeshMaterial(0.f, 0.f, 1.f);;
     cube.loadMesh(false, false);
@@ -201,10 +189,10 @@ void Application::start() {
 
     isometricRoom.setModelMatrix(modelMatrix);*/
 
-    /*Model sponza(
+    Model sponza(
         "src/Content/Models/Sponza/Sponza.gltf",
         "src/Content/Models/Sponza/"
-    );*/
+    );
 
     CoordinateSystem::Widget().createCoordinateSystem();
 
@@ -218,17 +206,22 @@ void Application::start() {
 
     Psystem test{ glm::vec3(0.f) };
 
-    //HDR::Framebuffer()._init(window.getBufferWidth(), window.getBufferHeight());
-    HDR::Framebuffer()._initMSAA(window.getBufferWidth(), window.getBufferHeight());
+    HDR::Framebuffer().enableMultisampling();
+    HDR::Framebuffer()._init(window.getBufferWidth(), window.getBufferHeight());
+    PostProcessMaster::Framebuffer()._init(window.getBufferWidth(), window.getBufferHeight());
 
-    setGlobalPBRUniforms(forwardShader);
-    //setGlobalPBRUniforms(deferredShader);
+    initFluidSimulation();
 
-    glfwSwapInterval(Overlay::Editor().enableVsync);
+    glfwSwapInterval(EngineEditor::Editor().enableVsync);
     glClearColor(0.4f, 0.4f, 0.4f, 1.f);
 
     while (!glfwWindowShouldClose(window.getGlfwWindow())) {
         glfwPollEvents();
+
+        currTime = (float)glfwGetTime();
+        deltaTime = currTime - lastTime;
+        elapsedTime += deltaTime;
+        lastTime = currTime;
 
         if (window.getBufferWidth() == 0 || window.getBufferHeight() == 0)
             continue;
@@ -240,44 +233,86 @@ void Application::start() {
             MouseSelector::EntitySelector().resize(bufferWidth, bufferHeight);
         }
 
-        currTime = (float)glfwGetTime();
-        deltaTime = currTime - lastTime;
-        elapsedTime += deltaTime;
-        lastTime = currTime;
+        EngineEditor::Editor().EditorCamera.update(window);
 
-        Overlay::Editor().EditorCamera.update(window, deltaTime);
+        pSystem.updateParticles(EngineEditor::Editor().EditorCamera.getCameraPosition());
+        //fireSystem.updateParticles(Overlay::Editor().EditorCamera.getCameraPosition());
 
-        pSystem.updateParticles(deltaTime, Overlay::Editor().EditorCamera.getCameraPosition());
-        //fireSystem.updateParticles(deltaTime, Overlay::Editor().EditorCamera.getCameraPosition());
+        if(elapsedTime >= EngineEditor::Editor().frameRateCap) {
+            if (EngineEditor::Editor().enableHDR) {
+                HDR::Framebuffer().enableHDRWriting();
+                currentFramebuffer = HDR::Framebuffer().FramebufferID();
+            }
+            else {
+                PostProcessMaster::Framebuffer().enableWriting();
+                currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
+            }
 
-        if(elapsedTime >= frameRateCap) {
-            if (!Overlay::Editor().enableVsync)
-                frameRateCap = Overlay::Editor().frameRateCap;
-            else
-                frameRateCap = 0;
+            EngineEditor::Editor().newFrame();
+            elapsedTime = 0.f;
 
-            mainLoopForward(test, modelMatrix, fireParticlePosition);
-            //mainLoopDeferred(pSystem, modelMatrix, fireParticlePosition);
+            //fluidSimulation();
+            //rayMarchingLoop();
+            //mainLoopForward(test, modelMatrix, fireParticlePosition);
+            mainLoopDeferred(pSystem, modelMatrix, fireParticlePosition);
+
+            EngineEditor::Editor().Render(window.getGlfwWindow());
+
+            glfwSwapBuffers(window.getMainWindow());
+            glClear(GL_COLOR_BUFFER_BIT);
         }
     }
 }
 
+void Application::fluidSimulation() {
+    renderFluidSimulation();
+
+    if (EngineEditor::Editor().enableHDR) {
+        PostProcessMaster::Framebuffer().postProcessingPass(
+            EngineEditor::Editor().enableBloom, EngineEditor::Editor().bloomThreshold, EngineEditor::Editor().bloomKnee,
+            EngineEditor::Editor().filterRadius, EngineEditor::Editor().exposure
+        );
+    }
+    else
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    EngineEditor::Editor().DrawEditorForward(window);
+}
+
+void Application::rayMarchingLoop() {
+    raymarchingShader.useShader();
+    glm::vec3 resolution{ 1.f };
+    resolution.x = (float)EngineEditor::Editor().getViewportDimensions().z;
+    resolution.y = (float)EngineEditor::Editor().getViewportDimensions().w;
+
+    if (window.getKeyPress(GLFW_KEY_R))
+        raymarchingShader.reloadShader("src/shaders/raymarching.vert", "src/shaders/raymarching.frag");
+
+    raymarchingShader.setVec3("resolution", resolution);
+    raymarchingShader.setVec2("cursor", window.MouseCoordinates());
+    raymarchingShader.setFloat("time", currTime);
+    raymarchingShader.setFloat("deltaTime", deltaTime);
+    raymarchingShader.setUint("isMouseClicked", window.getLMBPressed());
+
+    bindAttriblessVAO();
+    drawAttriblessQuad();
+
+    if (EngineEditor::Editor().enableHDR) {
+        PostProcessMaster::Framebuffer().postProcessingPass(
+            EngineEditor::Editor().enableBloom, EngineEditor::Editor().bloomThreshold, EngineEditor::Editor().bloomKnee,
+            EngineEditor::Editor().filterRadius, EngineEditor::Editor().exposure
+        );
+    }
+    else
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    EngineEditor::Editor().DrawEditorForward(window);
+}
+
 void Application::mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition) {
-    Overlay::Editor().newFrame();
-    elapsedTime = 0.f;
+    skylight.updateLightLocation(EngineEditor::Editor().directionalLightPosition);
 
-    skylight.updateLightLocation(Overlay::Editor().directionalLightPosition);
-
-    if (Overlay::Editor().enableHDR) {
-        HDR::Framebuffer().enableHDRWriting();
-        currentFramebuffer = HDR::Framebuffer().FramebufferID();
-    }
-    else {
-        PostProcessMaster::Framebuffer().enableWriting();
-        currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
-    }
-
-    if (Overlay::Editor().drawSkybox)
+    if (EngineEditor::Editor().drawSkybox)
         skybox.renderSkybox();
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -286,41 +321,42 @@ void Application::mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm:
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().enableShadows) {
-        csm.calculateShadows(Overlay::Editor().getViewportDimensions(), skylight.getLightDirection(), currentFramebuffer);
+    if (EngineEditor::Editor().enableShadows) {
+        csm.calculateShadows(EngineEditor::Editor().getViewportDimensions(), skylight.getLightDirection(), currentFramebuffer);
     }
 
-    MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
+    MouseSelector::EntitySelector().pickingPhase(EngineEditor::Editor().getViewportDimensions(), window, currentFramebuffer);
 
     forwardShader.useShader();
 
-    forwardShader.setMat4("viewportMatrix", Overlay::Editor().viewportMatrix);
+    forwardShader.setMat4("viewportMatrix", EngineEditor::Editor().viewportMatrix);
 
+    setGlobalPBRUniforms(forwardShader);
     setLightingUniforms(forwardShader);
 
-    forwardShader.setUint("calcShadows", Overlay::Editor().enableShadows);
-    forwardShader.setUint("enableSSAO", Overlay::Editor().enableSSAO);
-    forwardShader.setUint("drawWireframe", Overlay::Editor().drawWireframe);
-    forwardShader.setFloat("radius", Overlay::Editor().shadowRadius);
-    forwardShader.setFloat("emissiveIntensity", Overlay::Editor().emissiveMaterialStrength);
+    forwardShader.setUint("calcShadows", EngineEditor::Editor().enableShadows);
+    forwardShader.setUint("enableSSAO", EngineEditor::Editor().enableSSAO);
+    forwardShader.setUint("drawWireframe", EngineEditor::Editor().drawWireframe);
+    forwardShader.setFloat("radius", EngineEditor::Editor().shadowRadius);
+    forwardShader.setFloat("emissiveIntensity", EngineEditor::Editor().emissiveMaterialStrength);
 
     for (size_t i = 0; i < Model::modelList.size(); i++) {
-        if ((int)i == Overlay::Editor().entityID.x && (bool)Overlay::Editor().entityID.y == true)
+        if ((int)i == EngineEditor::Editor().entityID.x && (bool)EngineEditor::Editor().entityID.y == true)
             continue;
 
         Model::modelList[i]->renderModel(forwardShader);
     }
 
-    if (Overlay::Editor().entityID.x != -1) {
-        if ((bool)Overlay::Editor().entityID.y == false && Overlay::Editor().entityID.x < Mesh::meshList.size())
-            Mesh::meshList[Overlay::Editor().entityID.x]->renderMeshWithOutline(forwardShader, outlineShader);
+    if (EngineEditor::Editor().entityID.x != -1) {
+        if ((bool)EngineEditor::Editor().entityID.y == false && EngineEditor::Editor().entityID.x < Mesh::meshList.size())
+            Mesh::meshList[EngineEditor::Editor().entityID.x]->renderMeshWithOutline(forwardShader, outlineShader);
 
-        else if ((bool)Overlay::Editor().entityID.y == true && Overlay::Editor().entityID.x < Model::modelList.size())
-            Model::modelList[Overlay::Editor().entityID.x]->renderModelWithOutline(forwardShader, outlineShader);
+        else if ((bool)EngineEditor::Editor().entityID.y == true && EngineEditor::Editor().entityID.x < Model::modelList.size())
+            Model::modelList[EngineEditor::Editor().entityID.x]->renderModelWithOutline(forwardShader, outlineShader);
     }
 
     for (size_t i = 0; i < Mesh::meshList.size(); i++) {
-        if ((int)i == Overlay::Editor().entityID.x && (bool)Overlay::Editor().entityID.y == false)
+        if ((int)i == EngineEditor::Editor().entityID.x && (bool)EngineEditor::Editor().entityID.y == false)
             continue;
             
         Mesh::meshList[i]->renderMesh(forwardShader);
@@ -328,13 +364,13 @@ void Application::mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm:
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().displayGrid)
+    if (EngineEditor::Editor().displayGrid)
         Grid::EditorGrid().renderGrid();
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().displayCoordinateSystem)
-        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), Overlay::Editor().EditorCamera);
+    if (EngineEditor::Editor().displayCoordinateSystem)
+        CoordinateSystem::Widget().drawCoordinateSystem(EngineEditor::Editor().getViewportDimensions(), EngineEditor::Editor().EditorCamera);
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -342,7 +378,7 @@ void Application::mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm:
                        Overlay::Editor().EditorCamera.getFrontVector() * 200.f;*/
     //pSystem.generateParticles(particlePosition, 0.f);
 
-    pSystem.render(currTime, 1.f);
+    //pSystem.render(currTime, 1.f);
 
     /*if (window.getKeyPress(GLFW_KEY_R)) {
         pSystem.generateParticles(particlePosition, 0.f);
@@ -352,80 +388,60 @@ void Application::mainLoopForward(Psystem& pSystem, glm::mat4& modelMatrix, glm:
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().enableHDR) {
-        PostProcessMaster::Framebuffer().postProcessingPassMSAA(
-            Overlay::Editor().enableBloom, Overlay::Editor().bloomThreshold, Overlay::Editor().bloomKnee,
-            Overlay::Editor().filterRadius, Overlay::Editor().exposure
+    if (EngineEditor::Editor().enableHDR) {
+        PostProcessMaster::Framebuffer().postProcessingPass(
+            EngineEditor::Editor().enableBloom, EngineEditor::Editor().bloomThreshold, EngineEditor::Editor().bloomKnee,
+            EngineEditor::Editor().filterRadius, EngineEditor::Editor().exposure
         );
     }
     else
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    Overlay::Editor().DrawEditorForward(window);
-    Overlay::Editor().Render(window.getGlfwWindow());
-
-    glfwSwapBuffers(window.getMainWindow());
-    glClear(GL_COLOR_BUFFER_BIT);
+    EngineEditor::Editor().DrawEditorForward(window);
 }
 
 void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatrix, glm::vec3& particlePosition) {
-    elapsedTime = 0.f;
+    skylight.updateLightLocation(EngineEditor::Editor().directionalLightPosition);
 
-    Overlay::Editor().newFrame();
-
-    skylight.updateLightLocation(Overlay::Editor().directionalLightPosition);
-
-    if (Overlay::Editor().enableHDR) {
-        HDR::Framebuffer().enableHDRWriting();
-        currentFramebuffer = HDR::Framebuffer().FramebufferID();
-    }
-    else {
-        PostProcessMaster::Framebuffer().enableWriting();
-        currentFramebuffer = PostProcessMaster::Framebuffer().FramebufferID();
+    if (EngineEditor::Editor().enableShadows) {
+        csm.calculateShadows(EngineEditor::Editor().getViewportDimensions(), skylight.getLightDirection(), currentFramebuffer);
     }
 
-    if (Overlay::Editor().enableShadows) {
-        csm.calculateShadows(Overlay::Editor().getViewportDimensions(), skylight.getLightDirection(), currentFramebuffer);
-    }
+    MouseSelector::EntitySelector().pickingPhase(EngineEditor::Editor().getViewportDimensions(), window, currentFramebuffer);
 
-    MouseSelector::EntitySelector().pickingPhase(Overlay::Editor().getViewportDimensions(), window, currentFramebuffer);
+    SSAO::Framebuffer().setRadius(EngineEditor::Editor().ssaoRadius);
+    SSAO::Framebuffer().setBias(EngineEditor::Editor().ssaoBias);
+    SSAO::Framebuffer().setOcclusionPower(EngineEditor::Editor().ssaoOcclusionPower);
 
-    SSAO::Framebuffer().setRadius(Overlay::Editor().ssaoRadius);
-    SSAO::Framebuffer().setBias(Overlay::Editor().ssaoBias);
-    SSAO::Framebuffer().setOcclusionPower(Overlay::Editor().ssaoOcclusionPower);
+    GBuffer::Framebuffer().updateWireframeBool(EngineEditor::Editor().drawWireframe);
+    GBuffer::Framebuffer().updateBuffer(outlineShader, EngineEditor::Editor().entityID, currentFramebuffer);
 
-    GBuffer::Framebuffer().updateWireframeBool(Overlay::Editor().drawWireframe);
-    GBuffer::Framebuffer().updateBuffer(outlineShader, Overlay::Editor().entityID, currentFramebuffer);
-    SSAO::Framebuffer().calcSSAO(currentFramebuffer);
+    if(EngineEditor::Editor().enableSSAO)
+        SSAO::Framebuffer().calcSSAO(currentFramebuffer);
 
     deferredShader.useShader();
-
+    
+    setGlobalPBRUniforms(deferredShader);
     setLightingUniforms(deferredShader);
 
-    deferredShader.setUint("calcShadows", Overlay::Editor().enableShadows);
-    deferredShader.setUint("enableSSAO", Overlay::Editor().enableSSAO);
-    deferredShader.setFloat("radius", Overlay::Editor().shadowRadius);
+    deferredShader.setUint("calcShadows", EngineEditor::Editor().enableShadows);
+    deferredShader.setUint("enableSSAO", EngineEditor::Editor().enableSSAO);
+    deferredShader.setFloat("radius", EngineEditor::Editor().shadowRadius);
 
-    glActiveTexture(GL_TEXTURE7);
-    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().positionBuffer());
+    glBindTextureUnit(DEFERRED_SHADER::POSITION_BUFFER, GBuffer::Framebuffer().positionBuffer());
+    glBindTextureUnit(DEFERRED_SHADER::ALBEDO_BUFFER, GBuffer::Framebuffer().albedoBuffer());
+    glBindTextureUnit(DEFERRED_SHADER::NORMAL_BUFFER, GBuffer::Framebuffer().normalBuffer());
+    glBindTextureUnit(DEFERRED_SHADER::MATERIAL_BUFFER, GBuffer::Framebuffer().metallicBuffer());
+    glBindTextureUnit(DEFERRED_SHADER::OCCLUSION_BUFFER, SSAO::Framebuffer().occlusionBuffer());
 
-    glActiveTexture(GL_TEXTURE8);
-    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().albedoBuffer());
+    bindAttriblessVAO();
+    drawAttriblessQuad();
 
-    glActiveTexture(GL_TEXTURE9);
-    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().normalBuffer());
-
-    glActiveTexture(GL_TEXTURE10);
-    glBindTexture(GL_TEXTURE_2D, GBuffer::Framebuffer().metallicBuffer());
-
-    glActiveTexture(GL_TEXTURE11);
-    glBindTexture(GL_TEXTURE_2D, SSAO::Framebuffer().occlusionBuffer());
-
-    quad.renderQuad();
+    HDR::Framebuffer().copyDepthInfo(GBuffer::Framebuffer().framebufferID(), EngineEditor::Editor().viewportWidth(), EngineEditor::Editor().viewportHeight());
 
 //----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().drawSkybox)
+    if (EngineEditor::Editor().drawSkybox)
         skybox.renderSkybox();
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -434,39 +450,35 @@ void Application::mainLoopDeferred(ParticleSystem& pSystem, glm::mat4& modelMatr
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().displayGrid)
+    if (EngineEditor::Editor().displayGrid)
         Grid::EditorGrid().renderGrid();
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().displayCoordinateSystem)
-        CoordinateSystem::Widget().drawCoordinateSystem(Overlay::Editor().getViewportDimensions(), Overlay::Editor().EditorCamera);
+    if (EngineEditor::Editor().displayCoordinateSystem)
+        CoordinateSystem::Widget().drawCoordinateSystem(EngineEditor::Editor().getViewportDimensions(), EngineEditor::Editor().EditorCamera);
 
 //----------------------------------------------------------------------------------------------------------------
 
-    particlePosition = Overlay::Editor().EditorCamera.getCameraPosition() + 
-                       Overlay::Editor().EditorCamera.getFrontVector() * 200.f;
+    particlePosition = EngineEditor::Editor().EditorCamera.getCameraPosition() + 
+                       EngineEditor::Editor().EditorCamera.getFrontVector() * 200.f;
 
     if (window.getKeyPress(GLFW_KEY_R)) {
         pSystem.generateParticles(particlePosition, 0.f);
     }
 
-    pSystem.renderParticles(&window, Overlay::Editor().EditorCamera, modelMatrix);
+    pSystem.renderParticles(&window, EngineEditor::Editor().EditorCamera, modelMatrix);
 
 // ----------------------------------------------------------------------------------------------------------------
 
-    if (Overlay::Editor().enableHDR) {
+    if (EngineEditor::Editor().enableHDR) {
         PostProcessMaster::Framebuffer().postProcessingPass(
-            Overlay::Editor().enableBloom, Overlay::Editor().bloomThreshold, Overlay::Editor().bloomKnee,
-            Overlay::Editor().filterRadius, Overlay::Editor().exposure
+            EngineEditor::Editor().enableBloom, EngineEditor::Editor().bloomThreshold, EngineEditor::Editor().bloomKnee,
+            EngineEditor::Editor().filterRadius, EngineEditor::Editor().exposure
         );
     }
     else
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    Overlay::Editor().DrawEditorDeferred(window);
-    Overlay::Editor().Render(window.getGlfwWindow());
-
-    glfwSwapBuffers(window.getMainWindow());
-    glClear(GL_COLOR_BUFFER_BIT);
+    EngineEditor::Editor().DrawEditorDeferred(window);
 }

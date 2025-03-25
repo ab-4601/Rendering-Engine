@@ -1,7 +1,6 @@
 #ifndef _PARTICLE_SYSTEM_TRANSFORM_FEEDBACK_
 #define _PARTICLE_SYSTEM_TRANSFORM_FEEDBACK_
 
-#include "../Core Includes/GL_Core.h"
 #include "../Core Includes/GLM_Core.h"
 #include "../../headers/Engine Core/Shader.h"
 #include "../../headers/Engine Core/Particle System/ParticleTexture.h"

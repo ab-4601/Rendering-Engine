@@ -4,8 +4,8 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#include <imgui_internal.h>
 #include <ImGuizmo.h>
+
 #include "../Mesh/Mesh.h"
 #include "../Camera.h"
 #include "../Window.h"
@@ -13,6 +13,7 @@
 #include "../GBuffer.h"
 #include "../Post Processing/SSAO.h"
 #include "../Post Processing/PostProcessMaster.h"
+#include "DebugLog.h"
 #include "MouseSelector.h"
 
 template <typename T>
@@ -23,7 +24,7 @@ struct ComboItem {
 	std::vector<std::string> displayVals = {};
 };
 
-class Overlay {
+class EngineEditor {
 private:
 	ImGuizmo::OPERATION transformOperation = ImGuizmo::TRANSLATE;
 	ImFont* mainfont = nullptr;
@@ -40,6 +41,11 @@ private:
 	float translation[3] = { 0.f, 0.f, 0.f }, rotation[3] = { 0.f, 0.f, 0.f }, scale[3] = { 0.f, 0.f, 0.f };
 	float metallic = 0.f, ao = 0.f, roughness = 0.f, aspectRatio = 0.f;
 
+	const char* vendor{ nullptr };
+	const char* renderer{ nullptr };
+	const char* version{ nullptr };
+	const char* glslVersion{ nullptr };
+
 	bool isMouseOverViewport = false;
 
 	ComboItem<int> MSAA;
@@ -55,17 +61,20 @@ private:
 	void CreateDockingSpace();
 
 	void manipulate(float x, float y, float width, float height);
+	void entityPicking(const Window& window);
 
-	void DrawRenderingModifiers(const Window& window);
+	void DrawRenderingModifiers();
 	void DrawSceneViewportForward(const Window& window);
 	void DrawSceneViewportDeferred(const Window& window);
 	void DrawDetailsPanel(const Window& window);
+	void DrawToolbar(const ImGuiViewport* const viewport);
+	void DrawDebugLog();
 
 	void ResizeViewportForward();
 	void ResizeViewportDeferred();
 
 public:
-	Overlay() {
+	EngineEditor() {
 		MSAA.label = "MSAA Samples";
 		MSAA.flags = { true, false, false };
 		MSAA.displayVals = { "MSAA4x", "MSAA8x", "MSAA16x" };
@@ -79,9 +88,9 @@ public:
 
 	Camera EditorCamera;
 
-	Overlay& operator=(const Overlay&) = delete;
-	static Overlay& Editor() {
-		static Overlay editor;
+	EngineEditor& operator=(const EngineEditor&) = delete;
+	static EngineEditor& Editor() {
+		static EngineEditor editor;
 		return editor;
 	}
 
@@ -109,21 +118,29 @@ public:
 
 	void DrawEditorForward(const Window& window) {
 		DrawSceneViewportForward(window);
-		DrawRenderingModifiers(window);
+		DrawRenderingModifiers();
 		DrawDetailsPanel(window);
+
+#if _DEBUG
+		DrawDebugLog();
+#endif
 	}
 
 	void DrawEditorDeferred(const Window& window) {
 		DrawSceneViewportDeferred(window);
-		DrawRenderingModifiers(window);
+		DrawRenderingModifiers();
 		DrawDetailsPanel(window);
+
+#if _DEBUG
+		DrawDebugLog();
+#endif
 	}
 
 	void newFrame();
-	void _updateTransformOperation();
+	void updateTransformOperation();
 	void Render(GLFWwindow* window);
 
-	~Overlay();
+	~EngineEditor();
 };
 
 #endif

@@ -3,10 +3,10 @@
 
 #include <iostream>
 
-#include "../Core Includes/GL_Core.h"
 #include "../Core Includes/GLM_Core.h"
 #include "../Core Includes/Core.h"
 
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 enum CONTEXT_VERSION : int { MAJOR = 4, MINOR = 6 };
@@ -47,11 +47,6 @@ private:
 	}
 
 public:
-	const char* vendor{ nullptr };
-	const char* renderer{ nullptr };
-	const char* version{ nullptr };
-	const char* glslVersion{ nullptr };
-
 	Window(int windowWidth = 0, int windowHeight = 0);
 
 	// Setup window

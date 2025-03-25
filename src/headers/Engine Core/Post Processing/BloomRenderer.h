@@ -3,7 +3,7 @@
 
 #include "BloomFBO.h"
 #include "../../Engine Core/Shader.h"
-#include "../../Engine Core/Mesh/Geometry/Quad.h"
+#include "../../Application/AttriblessRendering.h"
 
 class BloomRenderer {
 private:
@@ -19,15 +19,13 @@ private:
 	Shader upsampleShader{ "src/shaders/bloom.vert", "src/shaders/bloom_upsample.frag" };
 	Shader downsampleShader{ "src/shaders/bloom.vert", "src/shaders/bloom_downsample.frag" };
 
-	void renderDownsamples(uint32_t srcTexture);
-	void renderUpsamples(float filterRadius);
+	void downsample(uint32_t srcTexture);
+	void upsample(float filterRadius);
 
 	void _initIntermediateFBO(int width, int height);
 
-	Quad quad;
-
 public:
-	BloomRenderer();
+	BloomRenderer() = default;
 
 	void resize(glm::ivec4 viewportDimensions) {
 		int width = std::max(1, viewportDimensions.z);
@@ -43,8 +41,7 @@ public:
 	void setThreshold(float threshold) { this->threshold = (threshold < 0.f) ? 0.f : threshold; }
 
 	bool _init(int windowWidth, int windowHeight);
-	void renderBloomTexture(uint32_t srcTexture, float filterRadius, uint32_t currFramebuffer = 0);
-	void renderBloomTextureMSAA(float filterRadius, uint32_t currFramebuffer = 0);
+	void renderBloomTexture(uint32_t srcTexture, float filterRadius);
 
 	GLuint bloomTexture() {
 		return mFBO.mipChain()[0].texture;

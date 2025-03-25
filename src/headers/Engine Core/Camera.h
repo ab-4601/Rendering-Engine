@@ -25,7 +25,7 @@ private:
 	float movementSpeed, turnSpeed, movementSpeedMultiplier, velocity;
 	CameraData cameraData;
 
-	void keyFunctionality(const Window& currWindow, float deltaTime);
+	void keyFunctionality(const Window& currWindow);
 	void mouseFunctionality(float xChange, float yChange, float scrollChange);
 
 	void updatePosition(Direction direction, const glm::vec3& directionVector) {
@@ -44,7 +44,7 @@ public:
 
 	void init(const Window& window, glm::vec3 position, float movementSpeed = 200.f, float turnSpeed = 0.1f);
 
-	void update(Window& window, float deltaTime);
+	void update(Window& window);
 
 	float getFOV() const { return fov; }
 	float getNearPlane() const { return nearPlane; }

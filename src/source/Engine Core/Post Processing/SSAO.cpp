@@ -4,7 +4,6 @@ SSAO::SSAO(int windowWidth, int windowHeight) {
 	kernel.clear();
 	noise.clear();
 
-	quad.createQuad();
 	scrResolution = glm::vec2(windowWidth, windowHeight);
 
 	// sample kernel generation
@@ -87,16 +86,16 @@ void SSAO::_init(int windowWidth, int windowHeight) {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	genTexture(colorBuffer, GL_COLOR_ATTACHMENT0, GL_RED, GL_RED, windowWidth, windowHeight);
 
-	if (!checkFBOStatus()) {
-		std::cerr << "Error initializing SSAO FBO" << std::endl;
+	if (!checkFramebufferStatus()) {
+		std::cerr << "Error initializing SSAO framebuffer" << std::endl;
 		exit(-1);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, blurFBO);
 	genTexture(colorBufferBlur, GL_COLOR_ATTACHMENT0, GL_RED, GL_RED, windowWidth, windowHeight);
 
-	if (!checkFBOStatus()) {
-		std::cerr << "Error initializing SSAO blur FBO" << std::endl;
+	if (!checkFramebufferStatus()) {
+		std::cerr << "Error initializing SSAO blur framebuffer" << std::endl;
 		exit(-1);
 	}
 }
@@ -128,7 +127,8 @@ void SSAO::calcSSAO(uint32_t currFramebuffer) {
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, noiseTexture);
 
-	quad.renderQuad();
+	bindAttriblessVAO();
+	drawAttriblessQuad();
 
 	shader.endShader();
 
@@ -149,7 +149,8 @@ void SSAO::ssaoBlur() {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, colorBuffer);
 
-	quad.renderQuad();
+	bindAttriblessVAO();
+	drawAttriblessQuad();
 
 	blurShader.endShader();
 }

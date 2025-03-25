@@ -4,7 +4,7 @@
 #pragma once
 
 #include <vector>
-#include "../../../../headers/Core Includes/GL_Core.h"
+#include <glad/glad.h>
 #include "../../../../headers/Core Includes/GLM_Core.h"
 
 class Line {

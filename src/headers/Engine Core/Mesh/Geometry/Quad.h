@@ -1,7 +1,7 @@
 #ifndef _QUAD_H_
 #define _QUAD_H_
 
-#include "../../../Core Includes/GL_Core.h"
+#include <glad/glad.h>
 
 typedef unsigned int uint32_t;
 

@@ -1,10 +1,6 @@
 #include "../../../headers/Engine Core/Post Processing/BloomRenderer.h"
 
-BloomRenderer::BloomRenderer() {
-	quad.createQuad();
-}
-
-void BloomRenderer::renderDownsamples(uint32_t srcTexture) {
+void BloomRenderer::downsample(uint32_t srcTexture) {
 	const std::vector<BloomMip>& mipChain = mFBO.mipChain();
 
 	downsampleShader.useShader();
@@ -24,7 +20,8 @@ void BloomRenderer::renderDownsamples(uint32_t srcTexture) {
 		glViewport(0, 0, (GLsizei)mip.size.x, (GLsizei)mip.size.y);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mip.texture, 0);
 
-		quad.renderQuad();
+		bindAttriblessVAO();
+		drawAttriblessQuad();
 
 		downsampleShader.setVec2("srcResolution", mip.size);
 
@@ -34,7 +31,7 @@ void BloomRenderer::renderDownsamples(uint32_t srcTexture) {
 	downsampleShader.endShader();
 }
 
-void BloomRenderer::renderUpsamples(float filterRadius) {
+void BloomRenderer::upsample(float filterRadius) {
 	const std::vector<BloomMip>& mipChain = mFBO.mipChain();
 
 	upsampleShader.useShader();
@@ -55,7 +52,8 @@ void BloomRenderer::renderUpsamples(float filterRadius) {
 		glViewport(0, 0, (GLsizei)nextMip.size.x, (GLsizei)nextMip.size.y);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, nextMip.texture, 0);
 
-		quad.renderQuad();
+		bindAttriblessVAO();
+		drawAttriblessQuad();
 	}
 
 	glDisable(GL_BLEND);
@@ -110,32 +108,11 @@ bool BloomRenderer::_init(int windowWidth, int windowHeight)
 	return true;
 }
 
-void BloomRenderer::renderBloomTexture(uint32_t srcTexture, float filterRadius, uint32_t currFramebuffer) {
+void BloomRenderer::renderBloomTexture(uint32_t srcTexture, float filterRadius) {
 	mFBO.enableWriting();
 
-	renderDownsamples(srcTexture);
-	renderUpsamples(filterRadius);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, currFramebuffer);
-
-	glViewport(srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w);
-}
-
-void BloomRenderer::renderBloomTextureMSAA(float filterRadius, uint32_t currFramebuffer) {
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, currFramebuffer);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
-	glBlitFramebuffer(
-		srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w,
-		srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w,
-		GL_COLOR_BUFFER_BIT, GL_NEAREST
-	);
-
-	mFBO.enableWriting();
-
-	renderDownsamples(screenBuffer);
-	renderUpsamples(filterRadius);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, currFramebuffer);
+	downsample(srcTexture);
+	upsample(filterRadius);
 
 	glViewport(srcViewportSize.x, srcViewportSize.y, srcViewportSize.z, srcViewportSize.w);
 }

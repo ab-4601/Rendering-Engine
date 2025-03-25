@@ -6,8 +6,6 @@ MouseSelector::MouseSelector(int windowWidth, int windowHeight) {
 
 void MouseSelector::pickingPhase(glm::ivec4 viewportDimensions, const Window& window, uint32_t framebuffer) {
 	pixelInfo.enableWriting();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glViewport(0, 0, window.getBufferWidth(), window.getBufferHeight());
 
 	shader.useShader();

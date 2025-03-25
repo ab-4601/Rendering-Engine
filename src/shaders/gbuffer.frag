@@ -62,9 +62,9 @@ void main() {
 		vec4 texColor = vec4(0.f);
 
 		if (isModel)
-			texColor = texture2D(sampler2D(renderData[data_in.drawID].diffuseMap), data_in.texel);
+			texColor = texture(sampler2D(renderData[data_in.drawID].diffuseMap), data_in.texel);
 		else
-			texColor = texture2D(diffuseMap, data_in.texel);
+			texColor = texture(diffuseMap, data_in.texel);
 
 		if(texColor.a < 0.1f)
 			discard;
@@ -96,9 +96,9 @@ void main() {
 		vec3 vNormal = vec3(0.f);
 
 		if (isModel)
-			vNormal = texture2D(sampler2D(renderData[data_in.drawID].normalMap), data_in.texel).rgb;
+			vNormal = texture(sampler2D(renderData[data_in.drawID].normalMap), data_in.texel).rgb;
 		else
-			vNormal = texture2D(normalMap, data_in.texel).rgb;
+			vNormal = texture(normalMap, data_in.texel).rgb;
 
 		vNormal = normalize(vNormal * 2.f - 1.f);
 
@@ -120,10 +120,12 @@ void main() {
 	if (useMaterialMap) {
 		if (isPackedMaterialMap) {
 			if (isModel) {
-				gMetallic = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).rgb;
+				gMetallic = texture(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).rgb;
+				gMetallic.r = 0.3f;
 			}
 			else {
-				gMetallic = texture2D(metallicMap, data_in.texel).rgb;
+				gMetallic = texture(metallicMap, data_in.texel).rgb;
+				gMetallic.r = 0.3f;
 			}
 		}
 		else {
@@ -131,12 +133,12 @@ void main() {
 			metallic.r = 0.3f;
 
 			if (isModel) {
-				metallic.g = texture2D(sampler2D(renderData[data_in.drawID].roughnessMap), data_in.texel).r;
-				metallic.b = texture2D(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).r;
+				metallic.g = texture(sampler2D(renderData[data_in.drawID].roughnessMap), data_in.texel).r;
+				metallic.b = texture(sampler2D(renderData[data_in.drawID].metallicMap), data_in.texel).r;
 			}
 			else {
-				metallic.g = texture2D(roughnessMap, data_in.texel).r;
-				metallic.b = texture2D(roughnessMap, data_in.texel).r;
+				metallic.g = texture(roughnessMap, data_in.texel).r;
+				metallic.b = texture(roughnessMap, data_in.texel).r;
 			}
 
 			gMetallic = metallic;

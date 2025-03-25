@@ -1,8 +1,18 @@
-#include "../../../headers/Engine Core/Editor/Overlay.h"
+#include "../../../headers/Engine Core/Editor/EngineEditor.h"
+#include <imgui_internal.h>
 
-void Overlay::_init(const Window& window) {
+void EngineEditor::_init(const Window& window) {
+    #if _DEBUG
+        RegisterDebugCallback();
+    #endif
+
     EditorCamera.init(window, glm::vec3{ -300.f, 0.f, 0.f });
     aspectRatio = viewportSize.x / viewportSize.y;
+
+    vendor = (const char*)glGetString(GL_VENDOR);
+    renderer = (const char*)glGetString(GL_RENDERER);
+    version = (const char*)glGetString(GL_VERSION);
+    glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     viewportMatrix = glm::mat4{
         glm::vec4((float)window.getBufferWidth() / 2.f, 0.f, 0.f, (float)window.getBufferWidth() / 2.f),
@@ -34,7 +44,7 @@ void Overlay::_init(const Window& window) {
     style->WindowRounding = 5.f;
     style->TabRounding = 2.f;
     style->GrabRounding = 12.f;
-    style->FrameRounding = 12.f;
+    //style->FrameRounding = 12.f;
     style->SeparatorTextPadding = ImVec2(25.f, 15.f);
 
     style->Colors[ImGuiCol_Border] = ImVec4(0.15f, 0.15f, 0.15f, 1.f);
@@ -61,7 +71,7 @@ void Overlay::_init(const Window& window) {
     style->Colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.f, 0.6f, 0.6f, 1.f);
 }
 
-void Overlay::newFrame() {
+void EngineEditor::newFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
@@ -70,7 +80,7 @@ void Overlay::newFrame() {
     CreateDockingSpace();
 }
 
-void Overlay::Render(GLFWwindow* window) {
+void EngineEditor::Render(GLFWwindow* window) {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -81,7 +91,7 @@ void Overlay::Render(GLFWwindow* window) {
     }
 }
 
-void Overlay::CreateDockingSpace() {
+void EngineEditor::CreateDockingSpace() {
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
@@ -104,7 +114,7 @@ void Overlay::CreateDockingSpace() {
     ImGui::End();
 }
 
-void Overlay::DrawVec3Control(const std::string& label, float* values, float resetValue, float columnWidth) {
+void EngineEditor::DrawVec3Control(const std::string& label, float* values, float resetValue, float columnWidth) {
     ImGui::PushID(label.c_str());
 
     ImGui::Columns(2);
@@ -167,7 +177,7 @@ void Overlay::DrawVec3Control(const std::string& label, float* values, float res
     ImGui::PopID();
 }
 
-void Overlay::DrawDragFloat(const std::string& label, float* values, float speed, float columnWidth, float min, float max) {
+void EngineEditor::DrawDragFloat(const std::string& label, float* values, float speed, float columnWidth, float min, float max) {
     ImGui::PushID(label.c_str());
 
     ImGui::Columns(2);
@@ -188,7 +198,7 @@ void Overlay::DrawDragFloat(const std::string& label, float* values, float speed
     ImGui::PopID();
 }
 
-void Overlay::DrawSliderFloat(const std::string& label, float* values, float min, float max, float columnWidth)
+void EngineEditor::DrawSliderFloat(const std::string& label, float* values, float min, float max, float columnWidth)
 {
     ImGui::PushID(label.c_str());
 
@@ -211,7 +221,7 @@ void Overlay::DrawSliderFloat(const std::string& label, float* values, float min
 }
 
 template<typename T>
-int Overlay::DrawCombo(ComboItem<T>& item, int& selection) 
+int EngineEditor::DrawCombo(ComboItem<T>& item, int& selection) 
 {
     int previousSelection{ 0 };
 
@@ -245,7 +255,7 @@ int Overlay::DrawCombo(ComboItem<T>& item, int& selection)
     return previousSelection;
 }
 
-void Overlay::manipulate(float x, float y, float width, float height) {
+void EngineEditor::manipulate(float x, float y, float width, float height) {
     ImGuizmo::AllowAxisFlip(false);
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::Enable(true);
@@ -256,7 +266,7 @@ void Overlay::manipulate(float x, float y, float width, float height) {
         ImGuizmo::Manipulate(
             glm::value_ptr(EditorCamera.generateViewMatrix()), glm::value_ptr(EditorCamera.getProjectionMatrix()),
             transformOperation, ImGuizmo::WORLD, glm::value_ptr(Mesh::meshList[entityID.x]->getModelMatrix())
-        );
+        );  
 
         colorBuffer[0] = Mesh::meshList[entityID.x]->getColor().x;
         colorBuffer[1] = Mesh::meshList[entityID.x]->getColor().y;
@@ -286,129 +296,7 @@ void Overlay::manipulate(float x, float y, float width, float height) {
     }
 }
 
-void Overlay::DrawRenderingModifiers(const Window& window) {
-    ImGui::Begin("Rendering");
-
-    if (ImGui::CollapsingHeader("HDR")) {
-        static int msaaSelection = 0;
-        static int frameRateSelection = 0;
-
-        DrawDragFloat("Exposure", &exposure, 0.01f, 150.f, 0.f, 10.f);
-        DrawDragFloat("Emissive Strength", &emissiveMaterialStrength, 0.01f, 150.f, 0.f, 10000.f);
-
-        int previousSelection = DrawCombo<int>(MSAA, msaaSelection);
-
-        if (previousSelection != msaaSelection) {
-            HDR::Framebuffer().updateSamplesMSAA(viewportDimensions.z, viewportDimensions.w, MSAA.values[msaaSelection]);
-            MSAA.flags[previousSelection] = false;
-        }
-
-        previousSelection = DrawCombo<float>(frameRate, frameRateSelection);
-
-        if (previousSelection != frameRateSelection) {
-            frameRateCap = frameRate.values[frameRateSelection];
-            frameRate.flags[previousSelection] = false;
-        }
-
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-    }
-
-    ImGui::NewLine();
-
-    if (ImGui::CollapsingHeader("Bloom")) {
-        DrawDragFloat("Filter Radius", &filterRadius, 0.0001f, 150.f, 0.f, 1.f);
-        DrawDragFloat("Threshold", &bloomThreshold, 0.01f, 150.f, 0.f, FLT_MAX);
-        DrawDragFloat("Knee", &bloomKnee, 0.0001f, 150.f, 0.f, 1.f);
-
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-    }
-
-    ImGui::NewLine();
-
-    if (ImGui::CollapsingHeader("Shadows")) {
-        DrawDragFloat("PCF Filter Radius", &shadowRadius, 0.001f, 150.f, 0.f, 10.f);
-
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-    }
-
-    ImGui::NewLine();
-
-    if (ImGui::CollapsingHeader("SSAO")) {
-        DrawDragFloat("Radius", &ssaoRadius, 0.1f, 150.f, 0.f, FLT_MAX);
-        DrawDragFloat("Bias", &ssaoBias, 0.001f, 150.f, 0.f, FLT_MAX);
-        DrawDragFloat("Occlusion Power", &ssaoOcclusionPower, 1.f, 150.f, 0.f, FLT_MAX);
-
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
-    }
-
-    ImGui::NewLine();
-
-    ImGui::Text("Vendor : %s", window.vendor);
-    ImGui::Text("Renderer : %s", window.renderer);
-    ImGui::Text("OpenGL version : %s", window.version);
-    ImGui::Text("GLSL version : %s", window.glslVersion);
-
-    ImGui::End();
-}
-
-void Overlay::ResizeViewportForward() {
-    viewportDimensions.z = (int)viewportSize.x;
-    viewportDimensions.w = (int)viewportSize.y;
-
-    glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
-
-    HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w, true);
-    PostProcessMaster::Framebuffer().resize(viewportDimensions, true);
-
-    EditorCamera.setProjectionAspect(viewportSize.x / viewportSize.y);
-
-    viewportMatrix = glm::mat4{
-        glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
-        glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
-        glm::vec4(0.f, 0.f, 1.f, 0.f),
-        glm::vec4(0.f, 0.f, 0.f, 1.f)
-    };
-}
-
-void Overlay::ResizeViewportDeferred() {
-    viewportDimensions.z = (int)viewportSize.x;
-    viewportDimensions.w = (int)viewportSize.y;
-
-    glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
-
-    HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w, false);
-    PostProcessMaster::Framebuffer().resize(viewportDimensions, false);
-    GBuffer::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w);
-    SSAO::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w);
-
-    EditorCamera.setProjectionAspect(viewportSize.x / viewportSize.y);
-
-    viewportMatrix = glm::mat4{
-        glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
-        glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
-        glm::vec4(0.f, 0.f, 1.f, 0.f),
-        glm::vec4(0.f, 0.f, 0.f, 1.f)
-    };
-}
-
-void Overlay::DrawSceneViewportForward(const Window& window) {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
-    ImGui::Begin("Scene Viewport");
-
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-    float framePadding = ImGui::GetFontSize() + style->FramePadding.y * 2.f;
-
-    viewportPos = ImGui::GetWindowPos();  
-    viewportSize = ImGui::GetContentRegionAvail();
-
-    viewportPos.y += (ImGui::GetWindowSize().y - viewportSize.y);
-
-    if (viewportDimensions.z != (int)viewportSize.x || viewportDimensions.w != (int)viewportSize.y)
-        ResizeViewportForward();
-
-    ImGui::Image((ImTextureID)PostProcessMaster::Framebuffer().ColorbufferID(), viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
-
+void EngineEditor::DrawToolbar(const ImGuiViewport* const viewport) {
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::SetNextWindowPos(ImVec2(viewportPos.x + 5.f, viewportPos.y + 5.f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(viewportSize.x, 20));
@@ -436,13 +324,172 @@ void Overlay::DrawSceneViewportForward(const Window& window) {
 
     ImGui::PopStyleColor(1);
     ImGui::PopStyleVar(2);
+}
 
-    snprintf(FPS, sizeof(FPS), "%.2f FPS", io->Framerate);
+void EngineEditor::DrawRenderingModifiers() {
+    ImGui::Begin("Rendering");
 
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    ImVec2 textPosition = ImVec2(viewportPos.x + 10.f, viewportPos.y + viewportSize.y - 20.f);
-    drawList->AddText(textPosition, IM_COL32(10, 255, 50, 255), FPS);
+    if (ImGui::CollapsingHeader("HDR", ImGuiTreeNodeFlags_DefaultOpen)) {
+        static int msaaSelection = 0;
+        static int frameRateSelection = 0;
 
+        DrawDragFloat("Exposure", &exposure, 0.01f, 150.f, 0.f, 10.f);
+        DrawDragFloat("Emissive Strength", &emissiveMaterialStrength, 0.01f, 150.f, 0.f, 10000.f);
+
+        int previousSelection = DrawCombo<int>(MSAA, msaaSelection);
+
+        if (previousSelection != msaaSelection) {
+            HDR::Framebuffer().updateSamplesMSAA(viewportDimensions.z, viewportDimensions.w, MSAA.values[msaaSelection]);
+            MSAA.flags[previousSelection] = false;
+        }
+
+        previousSelection = DrawCombo<float>(frameRate, frameRateSelection);
+
+        if (previousSelection != frameRateSelection) {
+            frameRateCap = frameRate.values[frameRateSelection];
+            frameRate.flags[previousSelection] = false;
+        }
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    }
+
+    ImGui::NewLine();
+
+    if (ImGui::CollapsingHeader("Bloom", ImGuiTreeNodeFlags_DefaultOpen)) {
+        DrawDragFloat("Filter Radius", &filterRadius, 0.0001f, 150.f, 0.f, 1.f);
+        DrawDragFloat("Threshold", &bloomThreshold, 0.01f, 150.f, 0.f, FLT_MAX);
+        DrawDragFloat("Knee", &bloomKnee, 0.0001f, 150.f, 0.f, 1.f);
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    }
+
+    ImGui::NewLine();
+
+    if (ImGui::CollapsingHeader("Shadows", ImGuiTreeNodeFlags_DefaultOpen)) {
+        DrawDragFloat("PCF Filter Radius", &shadowRadius, 0.001f, 150.f, 0.f, 10.f);
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    }
+
+    ImGui::NewLine();
+
+    if (ImGui::CollapsingHeader("SSAO", ImGuiTreeNodeFlags_DefaultOpen)) {
+        DrawDragFloat("Radius", &ssaoRadius, 0.1f, 150.f, 0.f, FLT_MAX);
+        DrawDragFloat("Bias", &ssaoBias, 0.001f, 150.f, 0.f, FLT_MAX);
+        DrawDragFloat("Occlusion Power", &ssaoOcclusionPower, 1.f, 150.f, 0.f, FLT_MAX);
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+    }
+
+    ImGui::NewLine();
+
+    ImGui::Text("Vendor : %s", vendor);
+    ImGui::Text("Renderer : %s", renderer);
+    ImGui::Text("OpenGL version : %s", version);
+    ImGui::Text("GLSL version : %s", glslVersion);
+
+    ImGui::End();
+}
+
+void EngineEditor::DrawDebugLog() {
+    ImGui::Begin("Debug Log");
+
+    if (ImGui::Button("Clear"))
+        g_DebugLogEntries.clear();
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Copy"))
+        ImGui::LogToClipboard();
+
+    ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.f);
+
+    ImGui::BeginChild("##log", ImVec2(0.f, 0.f), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    const float lineHeight = ImGui::GetTextLineHeight();
+    bool firstFragment = true, endsWithNewLine = true;
+
+    ImGuiListClipper clipper;
+    clipper.Begin((int)g_DebugLogEntries.size(), lineHeight);
+
+    while (clipper.Step())
+    {
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+            firstFragment = true;
+            const DebugLogEntry& entry = g_DebugLogEntries[i];
+            ImVec2 linePos = pos;
+
+            for (const auto& frag : entry.fragments) {
+                bool endsWithNewline = (!frag.text.empty() && frag.text.back() == '\n');
+                ImGui::PushStyleColor(ImGuiCol_Text, frag.color);
+                if (firstFragment) {
+                    ImGui::TextUnformatted(frag.text.c_str());
+                    firstFragment = false;
+                }
+                else {
+                    ImGui::SameLine(0.0f, 0.0f);
+                    ImGui::TextUnformatted(frag.text.c_str());
+                }
+                ImGui::PopStyleColor();
+                if (endsWithNewline) {
+                    firstFragment = true;
+                }
+            }
+            pos.y += lineHeight;
+            pos.x = ImGui::GetCursorScreenPos().x;
+        }
+    }
+    clipper.End();
+
+    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+        ImGui::SetScrollHereY(1.0f);
+
+    ImGui::EndChild();
+    ImGui::End();
+}
+
+void EngineEditor::ResizeViewportForward() {
+    viewportDimensions.z = (int)viewportSize.x;
+    viewportDimensions.w = (int)viewportSize.y;
+
+    glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
+
+    HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w);
+    PostProcessMaster::Framebuffer().resize(viewportDimensions);
+
+    EditorCamera.setProjectionAspect(viewportSize.x / viewportSize.y);
+
+    viewportMatrix = glm::mat4{
+        glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
+        glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
+        glm::vec4(0.f, 0.f, 1.f, 0.f),
+        glm::vec4(0.f, 0.f, 0.f, 1.f)
+    };
+}
+
+void EngineEditor::ResizeViewportDeferred() {
+    viewportDimensions.z = (int)viewportSize.x;
+    viewportDimensions.w = (int)viewportSize.y;
+
+    glViewport(viewportDimensions.x, viewportDimensions.y, viewportDimensions.z, viewportDimensions.w);
+
+    HDR::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w);
+    PostProcessMaster::Framebuffer().resize(viewportDimensions);
+    GBuffer::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w);
+    SSAO::Framebuffer().resize(viewportDimensions.z, viewportDimensions.w);
+
+    EditorCamera.setProjectionAspect(viewportSize.x / viewportSize.y);
+
+    viewportMatrix = glm::mat4{
+        glm::vec4(viewportDimensions.z / 2.f, 0.f, 0.f, viewportDimensions.z / 2.f),
+        glm::vec4(0.f, viewportDimensions.w / 2.f, 0.f, viewportDimensions.w / 2.f),
+        glm::vec4(0.f, 0.f, 1.f, 0.f),
+        glm::vec4(0.f, 0.f, 0.f, 1.f)
+    };
+}
+
+void EngineEditor::entityPicking(const Window& window) {
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && isMouseOverWindow(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
         mousePos = ImGui::GetMousePos();
         mousePos.x -= viewportPos.x;
@@ -460,9 +507,38 @@ void Overlay::DrawSceneViewportForward(const Window& window) {
             );
         }
     }
+}
+
+void EngineEditor::DrawSceneViewportForward(const Window& window) {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
+    ImGui::Begin("Scene Viewport");
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+    float framePadding = ImGui::GetFontSize() + style->FramePadding.y * 2.f;
+
+    viewportPos = ImGui::GetWindowPos();  
+    viewportSize = ImGui::GetContentRegionAvail();
+
+    viewportPos.y += (ImGui::GetWindowSize().y - viewportSize.y);
+
+    if (viewportDimensions.z != (int)viewportSize.x || viewportDimensions.w != (int)viewportSize.y)
+        ResizeViewportForward();
+
+    ImGui::Image((ImTextureID)PostProcessMaster::Framebuffer().ColorbufferID(), viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
+    DrawToolbar(viewport);
+
+    snprintf(FPS, sizeof(FPS), "%.2f FPS", io->Framerate);
+
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImVec2 textPosition = ImVec2(viewportPos.x + 10.f, viewportPos.y + viewportSize.y - 20.f);
+    drawList->AddText(textPosition, IM_COL32(10, 255, 50, 255), FPS);
+
+    entityPicking(window);
 
     if (entityID.x != -1) {
-        _updateTransformOperation();
+        updateTransformOperation();
         manipulate(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
     }
 
@@ -470,9 +546,11 @@ void Overlay::DrawSceneViewportForward(const Window& window) {
     ImGui::End();
 }
 
-void Overlay::DrawSceneViewportDeferred(const Window& window) {
+void EngineEditor::DrawSceneViewportDeferred(const Window& window) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0.f, 0.f });
     ImGui::Begin("Scene Viewport");
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
 
     float framePadding = ImGui::GetFontSize() + style->FramePadding.y * 2.f;
 
@@ -499,31 +577,18 @@ void Overlay::DrawSceneViewportDeferred(const Window& window) {
 
     ImGui::Image(displayBuffer, viewportSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
 
+    DrawToolbar(viewport);
+
     snprintf(FPS, sizeof(FPS), "%.2f FPS", io->Framerate);
 
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    drawList->AddText(ImVec2(viewportPos.x + 4.f, viewportPos.y + framePadding), IM_COL32(10, 255, 50, 255), FPS);
+    ImVec2 textPosition = ImVec2(viewportPos.x + 10.f, viewportPos.y + viewportSize.y - 20.f);
+    drawList->AddText(textPosition, IM_COL32(10, 255, 50, 255), FPS);
 
-    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && isMouseOverWindow(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
-        mousePos = ImGui::GetMousePos();
-        mousePos.x -= viewportPos.x;
-        mousePos.y -= viewportPos.y;
-
-        if (mousePos.x >= 0 || mousePos.x <= viewportSize.x || mousePos.y >= 0 || mousePos.y <= viewportSize.y) {
-            float scaleX = (float)window.getBufferWidth() / viewportSize.x;
-            float scaleY = (float)window.getBufferHeight() / viewportSize.y;
-
-            mousePos.x = mousePos.x * scaleX;
-            mousePos.y = mousePos.y * scaleY;
-
-            entityID = MouseSelector::EntitySelector().mouseSelectionResult(
-                window.getBufferHeight(), (int)mousePos.x, (int)mousePos.y
-            );
-        }
-    }
+    entityPicking(window);
 
     if (entityID.x != -1) {
-        _updateTransformOperation();
+        updateTransformOperation();
         manipulate(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
     }
 
@@ -531,18 +596,18 @@ void Overlay::DrawSceneViewportDeferred(const Window& window) {
     ImGui::End();
 }
 
-void Overlay::_updateTransformOperation() {
-    if (ImGui::IsKeyPressed(ImGuiKey_1))
+void EngineEditor::updateTransformOperation() {
+    if (ImGui::IsKeyPressed(ImGuiKey_T))
         transformOperation = ImGuizmo::TRANSLATE;
 
-    else if (ImGui::IsKeyPressed(ImGuiKey_2))
+    else if (ImGui::IsKeyPressed(ImGuiKey_R))
         transformOperation = ImGuizmo::ROTATE;
 
-    else if (ImGui::IsKeyPressed(ImGuiKey_3))
+    else if (ImGui::IsKeyPressed(ImGuiKey_E))
         transformOperation = ImGuizmo::SCALE;
 }
 
-void Overlay::DrawDetailsPanel(const Window& window) {
+void EngineEditor::DrawDetailsPanel(const Window& window) {
     static bool showStyleEditor = false;
     static bool swapInterval = enableVsync;
 
@@ -550,7 +615,7 @@ void Overlay::DrawDetailsPanel(const Window& window) {
 
     ImGui::Begin("Details Panel");
 
-    if (ImGui::CollapsingHeader("Scene")) {
+    if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Render Skybox", &drawSkybox);
         ImGui::Checkbox("Enable HDR", &enableHDR);
         ImGui::Checkbox("Enable Bloom", &enableBloom);
@@ -568,7 +633,7 @@ void Overlay::DrawDetailsPanel(const Window& window) {
 
     ImGui::NewLine();
 
-    if (ImGui::CollapsingHeader("Properties")) {
+    if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SeparatorTextEx(ImGui::GetID("Material Properties"), "Material Properties", NULL, 3.f);
         ImGui::Columns(2);
         ImGui::SetColumnWidth(0, 120.f);
@@ -599,7 +664,7 @@ void Overlay::DrawDetailsPanel(const Window& window) {
 
     ImGui::NewLine();
 
-    if (ImGui::CollapsingHeader("Lights")) {
+    if (ImGui::CollapsingHeader("Lights", ImGuiTreeNodeFlags_DefaultOpen)) {
         glm::vec3 pointLightDirection{ 0.f };
         glm::vec3 spotLightDirection{ 0.f };
         DrawVec3Control("Directional Light", glm::value_ptr(directionalLightPosition), 0.f, 150.f);
@@ -616,7 +681,6 @@ void Overlay::DrawDetailsPanel(const Window& window) {
     );
     ImGui::Text("Mouse Cursor Position : (%.2f, %.2f)", mousePos.x, mousePos.y);
     ImGui::Text("Entity Index : (%i, %i)", entityID.x, entityID.y);
-    ImGui::Text("Viewport Size : (%.1f, %.1f)", viewportSize.x, viewportSize.y);
 
     ImGui::NewLine();
     ImGui::Text("Application average: %.4f ms/frame", 1000.f / io->Framerate);
@@ -647,7 +711,7 @@ void Overlay::DrawDetailsPanel(const Window& window) {
     }
 }
 
-Overlay::~Overlay() {
+EngineEditor::~EngineEditor() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
